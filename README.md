@@ -1,55 +1,192 @@
 # NFC Inmobiliarias
 
-Asesor inmobiliario con integración de tarjetas NFC, WhatsApp y webhook.
+Asesor inmobiliario completo con gestión de propiedades, vCard de presentación, integración con WhatsApp y webhook.
 
-## Características
+## 🎉 Características Principales
 
-✅ Formulario de captura de leads  
-✅ Integración con WhatsApp  
-✅ Webhook para n8n  
-✅ Catálogo de propiedades  
-✅ Optimizado para Vercel  
+✅ **Dashboard Admin** - Gestion completa de propiedades  
+✅ **Carga de Propiedades** - Con foto, descripción y detalles  
+✅ **vCard del Agente** - Presentación profesional con contacto  
+✅ **Botón para Agregar Contacto** - Descargar vCard al dispositivo  
+✅ **Formulario de Captura** - Leads automáticos  
+✅ **Integración WhatsApp** - Contacto directo  
+✅ **Webhook n8n** - Procesamiento de datos  
+✅ **Optimizado para Vercel** - Deploy gratis y rápido
 
-## Despliegue en Vercel - GUÍA PASO A PASO
+## 📊 Cómo Funciona
 
-### Paso 1: Push al Repositorio
+### Para el Agente Inmobiliario
+
+1. **Acceder al Dashboard**
+   - Ve a `/dashboard.html`
+   - Autentica con contraseña (si quieres agregar)
+
+2. **Configurar Datos Personales**
+   - Nombre, email, teléfono
+   - Foto de perfil
+   - Presentation personal
+   - Todo se guarda en tu dispositivo (localStorage)
+
+3. **Cargar Propiedades**
+   - Título, descripción, precio
+   - Zona, tipo, características
+   - Foto de la propiedad
+   - Se almacenan y muestran automáticamente
+
+4. **vCard QR**
+   - Se genera automáticamente
+   - Los clientes pueden descargar tu contacto
+   - Se agrega directamente a su agenda
+
+### Para el Cliente
+
+1. Escanea tarjeta NFC o accede al sitio
+2. Ve tu presentación (vCard con foto)
+3. Opción de agregar tu contacto a su agenda
+4. Coloca un botón para descargar el vCard
+5. Ve las propiedades disponibles
+6. Completa formulario y es redirigido a WhatsApp
+
+## 🚀 Despliegue en Vercel
+
+### Paso 1: Preparar Código
 
 ```bash
 git add .
-git commit -m "Fix: Optimización completa para Vercel"
+git commit -m "Agregar dashboard y gestión de propiedades"
 git push origin main
 ```
 
 ### Paso 2: Conectar Vercel
 
 1. Ve a [vercel.com](https://vercel.com)
-2. **Sign in** con tu cuenta GitHub
-3. Haz clic en **"Add New" → "Project"**
-4. Selecciona tu repositorio `nfcinmobiliarias`
-5. Haz clic en **"Import"**
+2. **Sign in** con GitHub
+3. **Add New → Project**
+4. Selecciona repositorio `nfcinmobiliarias`
+5. Haz clic en **Import**
 
-### Paso 3: Configurar Variables de Entorno ⚠️ IMPORTANTE
+### Paso 3: Variables de Entorno
 
-En la pantalla de configuración, **ANTES de hacer Deploy**, ve a **"Environment Variables"** y agrega:
+En Vercel Dashboard, ve a **Settings → Environment Variables** y agrega:
 
-| Variable | Valor | Ejemplo |
-|----------|-------|---------|
-| `WEBHOOK_URL` | URL de tu webhook n8n | `https://n8n.tudominio.com/webhook/lead` |
-| `WHATSAPP_NUMBER` | Tu número de WhatsApp | `5493462587692` |
-
-**Nota**: El número debe ser sin símbolos, en formato internacional.
+```
+WEBHOOK_URL=https://n8n.tu-dominio.com/webhook/lead
+WHATSAPP_NUMBER=5493462587692
+```
 
 ### Paso 4: Deploy
 
-Haz clic en **"Deploy"** y espera a que termine (2-3 minutos aprox).
+- Haz clic en **Deploy**
+- Espera 2-3 minutos
+- ¡Listo!
 
-### Paso 5: Verificar Funcionamiento
+## 👨‍💼 Guía de Uso - Dashboard Admin
 
-Cuando el deploy termine:
-1. Ve a la URL que te proporciona Vercel
-2. Completa el formulario
-3. Deberías ser redirigido a WhatsApp
-4. Los datos se enviarán a tu webhook
+### Acceder al Dashboard
+
+```
+https://tu-sitio-vercel.com/dashboard.html
+```
+
+### Tab 1: Propiedades
+
+**Agregar Nueva Propiedad:**
+1. Completa todos los campos:
+   - Título (ej: "Casa 3 ambientes")
+   - Descripción detallada
+   - Precio (ej: "$150.000")
+   - Ubicación/Zona
+   - Tipo de propiedad
+   - Características (separadas por comas)
+   - Foto (JPG, PNG o WebP, máx 5MB)
+
+2. Haz clic en **"💾 Guardar Propiedad"**
+
+3. La propiedad aparecer automáticamente en:
+   - El dashboard (tarjeta)
+   - La página principal del sitio
+   - En la cartera visible para clientes
+
+**Editar o Eliminar:**
+- Haz clic en ✏️ para editar (próximamente)
+- Haz clic en 🗑️ para eliminar
+
+### Tab 2: Datos del Agente
+
+**Configurar tu Perfil:**
+1. Datos personales:
+   - Nombre completo
+   - Email (será en el vCard)
+   - Teléfono/WhatsApp
+   - Nombre de empresa
+
+2. Presentación:
+   - Texto que querés que vean los clientes
+   - Ej: "Experto en propiedades del norte con 5 años de experiencia"
+
+3. Foto de perfil:
+   - Se mostrará en círculo en la página principal
+   - Recomendado: 500x500px
+
+4. Haz clic en **"💾 Guardar Datos"**
+
+La vista previa mostrar:
+- Tu vCard completa
+- Código QR para que descarguen tu contacto
+- Botón para descargar vCard (.vcf)
+
+## 📱 vCard y Contactos
+
+### ¿Qué es vCard?
+
+Un formato estándar para compartir contactos que funciona en todos los teléfonos.
+
+### Cómo Funciona en tu Sitio
+
+1. **Página Principal**: Los clientes ven tu presentación
+2. **Botón "📥 Guardar Contacto"**: Descarga tu vCard
+3. **QR Code**: Pueden escanear para agregar contacto
+4. **WhatsApp Directo**: Botón verde para contactarte
+
+### Para Clientes
+
+```
+1. Abre tu sitio en el móvil
+2. Ve tu presentación (foto + nombre + empresa)
+3. Haz clic en "📥 Guardar Contacto"
+4. Se descarga tu vCard
+5. El móvil pregunta si importar contacto
+6. ¡Listo! Tienes tu número guardado
+```
+
+## 📁 Estructura del Proyecto
+
+```
+├── index.html           # Página principal (con vCard)
+├── dashboard.html       # Panel de administración
+├── script.js            # Lógica de página principal
+├── dashboard.js         # Lógica del dashboard
+├── utils.js             # Funciones compartidas
+├── style.css            # Estilos (responsive)
+├── config.json          # Configuración
+├── api/
+│   └── lead.js         # Serverless (procesa leads)
+├── vercel.json         # Configuración Vercel
+├── package.json        # Dependencias
+└── build.sh            # Script de build
+```
+
+## 💾 Almacenamiento
+
+**LocalStorage:**
+- Propiedades se guardan en navegador del usuario
+- Se persisten entre sesiones
+- No requiere servidor
+- Cada usuario puede tener sus propiedades
+
+**Sincronización:**
+- Para sincronizar entre dispositivos, exporta/importa
+- O sube propiedades a BD (próximo feature)
 
 ## ✅ SOLUCIÓN DEFINITIVA PARA ERROR 404
 
