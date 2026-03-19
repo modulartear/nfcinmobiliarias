@@ -1,5 +1,15 @@
 {
-  "buildCommand": "mkdir -p public && cp index.html dashboard.html style.css config.json config.js script.js dashboard.js utils.js public/ && rm -rf public/api && cp -r api public/",
+  "buildCommand": "mkdir -p public && cp index.html dashboard.html style.css config.json config.js script.js dashboard.js utils.js public/",
   "outputDirectory": "public",
-  "cleanUrls": false
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
+  ]
 }
