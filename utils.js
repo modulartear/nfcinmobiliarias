@@ -129,6 +129,93 @@ const Validators = {
   }
 };
 
+// Gestión de Leads (notificaciones)
+const LeadsManager = {
+  STORAGE_KEY: 'nfc_leads',
+
+  getAll() {
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  },
+
+  add(lead) {
+    const leads = this.getAll();
+    const item = {
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      read: false,
+      ...lead
+    };
+    leads.unshift(item); // Newest first
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+    return item;
+  },
+
+  markRead(id) {
+    const leads = this.getAll();
+    const index = leads.findIndex(l => l.id === id);
+    if (index !== -1) {
+      leads[index].read = true;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+    }
+  },
+
+  update(id, changes) {
+    const leads = this.getAll();
+    const index = leads.findIndex(l => l.id === id);
+    if (index === -1) return null;
+    leads[index] = { ...leads[index], ...changes };
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+    return leads[index];
+  },
+
+  markAllRead() {
+    const leads = this.getAll().map(l => ({ ...l, read: true }));
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+  },
+
+  clear() {
+    localStorage.removeItem(this.STORAGE_KEY);
+  },
+
+  countUnread() {
+    return this.getAll().filter(l => !l.read).length;
+  }
+};
+
+// Gestión de contraseña del dashboard
+const PasswordManager = {
+  STORAGE_KEY: 'nfc_dashboard_password',
+
+  async hash(value) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return btoa(String.fromCharCode(...hashArray));
+  },
+
+  async set(password) {
+    const hashed = await this.hash(password);
+    localStorage.setItem(this.STORAGE_KEY, hashed);
+  },
+
+  async verify(password) {
+    const stored = localStorage.getItem(this.STORAGE_KEY);
+    if (!stored) return false;
+    const hashed = await this.hash(password);
+    return stored === hashed;
+  },
+
+  isSet() {
+    return !!localStorage.getItem(this.STORAGE_KEY);
+  },
+
+  clear() {
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+};
+
 // Funciones de imagen
 const ImageUtils = {
   // Convertir imagen a base64
@@ -182,6 +269,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     PropertiesManager,
     AgentManager,
+    LeadsManager,
+    PasswordManager,
     VCardUtils,
     Validators,
     ImageUtils

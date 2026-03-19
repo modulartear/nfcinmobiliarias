@@ -3,7 +3,7 @@
 // ============================================
 
 // Cambiar entre tabs
-function switchTab(tabName) {
+function switchTab(tabName, button) {
   // Ocultar todos los tabs
   document.querySelectorAll('.tab-content').forEach(tab => {
     tab.classList.remove('active');
@@ -18,11 +18,18 @@ function switchTab(tabName) {
   document.getElementById(tabName).classList.add('active');
 
   // Activar botón
-  event.target.classList.add('active');
+  if (button) {
+    button.classList.add('active');
+  }
 
   // Recargar vista previa del agente si es necesario
   if (tabName === 'agent') {
     renderAgentPreview();
+  }
+
+  // Actualizar contador de leads si estamos en esa pestaña
+  if (tabName === 'leads') {
+    renderLeads();
   }
 }
 
@@ -131,6 +138,78 @@ function renderProperties() {
       </div>
     </div>
   `).join('');
+}
+
+function updateLeadsBadge() {
+  const badge = document.getElementById('leadsBadge');
+  if (!badge) return;
+  const count = LeadsManager.countUnread();
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderLeads() {
+  const leads = LeadsManager.getAll();
+  const container = document.getElementById('leadsList');
+
+  if (!container) return;
+
+  if (leads.length === 0) {
+    container.innerHTML = '<div class="no-properties">No hay leads recibidos aún</div>';
+    updateLeadsBadge();
+    return;
+  }
+
+  container.innerHTML = leads.map(lead => `
+    <div class="property-card" style="border-color: ${lead.read ? '#ddd' : '#e74c3c'};">
+      <div class="property-content">
+        <div class="property-title">${lead.nombre || 'Sin nombre'}</div>
+        <div class="property-details">
+          <strong>Interés:</strong> ${lead.interes}<br>
+          <strong>Teléfono:</strong> ${lead.telefono}<br>
+          <strong>Origen:</strong> ${lead.origen || 'web'}<br>
+          <strong>Fecha:</strong> ${new Date(lead.createdAt).toLocaleString()}
+        </div>
+        <div class="property-actions">
+          <span style="font-size:12px; color: ${lead.read ? '#4caf50' : '#e74c3c'};">${lead.read ? 'Leído' : 'Nuevo'}</span>
+          <button class="btn btn-secondary" onclick="toggleLeadRead('${lead.id}')">${lead.read ? 'Marcar no leído' : 'Marcar leído'}</button>
+          <button class="btn btn-danger" onclick="deleteLead('${lead.id}')">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  updateLeadsBadge();
+}
+
+function toggleLeadRead(id) {
+  const leads = LeadsManager.getAll();
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+  LeadsManager.update(id, { read: !lead.read });
+  renderLeads();
+}
+
+function deleteLead(id) {
+  const leads = LeadsManager.getAll().filter(l => l.id !== id);
+  localStorage.setItem(LeadsManager.STORAGE_KEY, JSON.stringify(leads));
+  renderLeads();
+}
+
+function markAllLeadsRead() {
+  LeadsManager.markAllRead();
+  renderLeads();
+}
+
+function clearLeads() {
+  if (confirm('¿Eliminar todos los leads?')) {
+    LeadsManager.clear();
+    renderLeads();
+  }
 }
 
 function editProperty(id) {
@@ -269,11 +348,62 @@ function showAlert(elementId, message, type) {
 }
 
 // ============================================
-// INICIALIZACIÓN
+// AUTENTICACIÓN - CONTRASEÑA DE DASHBOARD
 // ============================================
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Cargar datos del agente si existen
+async function initAuth() {
+  const overlay = document.getElementById('loginOverlay');
+  const container = document.querySelector('.dashboard-container');
+  const hint = document.getElementById('loginHint');
+
+  const isAuthenticated = sessionStorage.getItem('nfc_dashboard_authenticated') === 'true';
+  const isSet = PasswordManager.isSet();
+
+  if (isAuthenticated) {
+    overlay.style.display = 'none';
+    container.style.display = 'block';
+    initDashboard();
+    return;
+  }
+
+  if (!isSet) {
+    hint.innerText = 'Configura una contraseña para proteger el dashboard.';
+  } else {
+    hint.innerText = 'Ingresa tu contraseña para acceder al dashboard.';
+  }
+
+  overlay.style.display = 'flex';
+  container.style.display = 'none';
+}
+
+async function handleLogin() {
+  const input = document.getElementById('dashboardPassword');
+  const errorDiv = document.getElementById('loginError');
+  const password = input.value.trim();
+
+  if (!password) {
+    errorDiv.textContent = 'Ingresa una contraseña';
+    return;
+  }
+
+  if (!PasswordManager.isSet()) {
+    await PasswordManager.set(password);
+  }
+
+  const valid = await PasswordManager.verify(password);
+  if (!valid) {
+    errorDiv.textContent = 'Contraseña incorrecta';
+    return;
+  }
+
+  errorDiv.textContent = '';
+  sessionStorage.setItem('nfc_dashboard_authenticated', 'true');
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.querySelector('.dashboard-container').style.display = 'block';
+  initDashboard();
+}
+
+async function initDashboard() {
   const agent = AgentManager.get();
   if (agent) {
     document.getElementById('agentName').value = agent.nombre;
@@ -283,9 +413,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('agentPresentation').value = agent.presentacion;
   }
 
-  // Renderizar propiedades
   renderProperties();
   renderAgentPreview();
+  updateLeadsBadge();
+
+  // Escuchar cambios en localStorage para actualizar leads en vivo
+  window.addEventListener('storage', (event) => {
+    if (event.key === LeadsManager.STORAGE_KEY) {
+      updateLeadsBadge();
+      if (document.getElementById('leads').classList.contains('active')) {
+        renderLeads();
+      }
+    }
+  });
 
   console.log('Dashboard inicializado correctamente');
+}
+
+// Iniciar autenticación al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
 });

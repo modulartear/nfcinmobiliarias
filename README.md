@@ -4,7 +4,9 @@ Asesor inmobiliario completo con gestión de propiedades, vCard de presentación
 
 ## 🎉 Características Principales
 
-✅ **Dashboard Admin** - Gestion completa de propiedades  
+✅ **Dashboard Admin** - Gestión completa de propiedades  
+✅ **Protección con contraseña** para el dashboard  
+✅ **Notificaciones de leads** en tiempo real  
 ✅ **Carga de Propiedades** - Con foto, descripción y detalles  
 ✅ **vCard del Agente** - Presentación profesional con contacto  
 ✅ **Botón para Agregar Contacto** - Descargar vCard al dispositivo  
@@ -87,6 +89,20 @@ WHATSAPP_NUMBER=5493462587692
 ```
 https://tu-sitio-vercel.com/dashboard.html
 ```
+
+> 🔐 **Seguridad:** El dashboard está protegido con contraseña.
+> - La primera vez que ingresas, se te pedirá crear una contraseña.
+> - En futuras visitas, deberás ingresar la misma contraseña para acceder.
+> - El acceso se conserva en tu sesión (hasta cerrar el navegador).
+
+### Tab 0: Leads (Notificaciones)
+
+En la pestaña **Leads** verás las notificaciones de clientes que completaron el formulario.
+
+- ✅ Las solicitudes se guardan automáticamente en el dashboard.
+- ✅ Verás un contador de nuevos leads en la pestaña.
+- ✅ Puedes marcar leads como leídos o eliminar todos.
+
 
 ### Tab 1: Propiedades
 

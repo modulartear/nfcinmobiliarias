@@ -1,29 +1,12 @@
 // ============================================
-// SCRIPT.JS - Lógica Principal
+// CONFIGURACIÓN
 // ============================================
 
-// Configuración del API
-const API_BASE = window.location.origin;
-let numero = "5493462587692"; // Valor por defecto
+const WEBHOOK_URL = "https://hook.us2.make.com/i2d5r8dwsnrweycn6b68m1c18xjkl33e";
+let numero = "5493462587692";
 
 // ============================================
-// CARGAR CONFIGURACIÓN DEL SERVIDOR
-// ============================================
-
-fetch(`${API_BASE}/api/lead`)
-  .then(res => {
-    if (!res.ok) throw new Error('Failed to load config');
-    return res.json();
-  })
-  .then(config => {
-    if (config.whatsappNumber) {
-      numero = config.whatsappNumber;
-    }
-  })
-  .catch(err => console.warn('Could not load config from server:', err));
-
-// ============================================
-// RENDERIZAR VCARD DEL AGENTE
+// RENDERIZAR AGENTE
 // ============================================
 
 function renderAgentCard() {
@@ -31,18 +14,19 @@ function renderAgentCard() {
   const agentContent = document.getElementById('agentContent');
 
   agentContent.innerHTML = `
-    ${agent.foto ? `<img src="${agent.foto}" alt="${agent.nombre}" class="agent-photo">` : ''}
+    ${agent.foto ? `<img src="${agent.foto}" class="agent-photo">` : ''}
     
     <div class="agent-name">${agent.nombre}</div>
     <div class="agent-company">${agent.empresa}</div>
     <div class="agent-presentation">"${agent.presentacion}"</div>
+    
     <div class="agent-contact">
       📧 ${agent.email} | 📱 ${agent.telefono}
     </div>
 
     <div class="vcard-buttons">
-      <button class="btn-vcard" onclick="downloadAgentVCard()">📥 Guardar Contacto</button>
-      <a href="https://wa.me/${numero}" class="btn-whatsapp-agent" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">💬 WhatsApp</a>
+      <button onclick="downloadAgentVCard()">📥 Guardar Contacto</button>
+      <a href="https://wa.me/${numero}">💬 WhatsApp</a>
     </div>
   `;
 }
@@ -50,56 +34,54 @@ function renderAgentCard() {
 function downloadAgentVCard() {
   const agent = AgentManager.get();
   VCardUtils.downloadvCard(agent);
-  alert('✅ Contacto descargado. Puedes importarlo en tu agenda.');
+  alert('Contacto descargado');
 }
 
 // ============================================
-// RENDERIZAR PROPIEDADES
+// RENDER PROPIEDADES
 // ============================================
 
 function renderProperties() {
   const properties = PropertiesManager.getAll();
   const lista = document.getElementById('lista');
 
-  if (properties.length === 0) {
-    lista.innerHTML = '<div class="no-properties">No hay propiedades disponibles en este momento</div>';
+  if (!properties.length) {
+    lista.innerHTML = 'No hay propiedades disponibles';
     return;
   }
 
   lista.innerHTML = properties.map(prop => `
     <div class="property-card">
-      <img src="${prop.imagen}" alt="${prop.titulo}" class="property-image">
-      <div class="property-info">
-        <div class="property-title">${prop.titulo}</div>
-        <div class="property-price">${prop.precio}</div>
-        <div class="property-details">
-          <strong>${prop.tipo}</strong> • ${prop.zona}<br>
-          ${prop.caracteristicas.substring(0, 50)}...
-        </div>
-        <button class="btn-consultar" onclick="consultarPropiedad('${prop.titulo}')">Consultar</button>
+      <img src="${prop.imagen}" class="property-image">
+      <div>
+        <h3>${prop.titulo}</h3>
+        <p>${prop.precio} - ${prop.zona}</p>
+        <button onclick="consultarPropiedad('${prop.titulo}')">
+          Consultar
+        </button>
       </div>
     </div>
   `).join('');
 }
 
-function consultarPropiedad(nombrePropiedad) {
-  const nombre = prompt('¿Cuál es tu nombre?');
+// ============================================
+// CONSULTAR PROPIEDAD
+// ============================================
+
+function consultarPropiedad(propiedad) {
+  const nombre = prompt("Tu nombre:");
   if (!nombre) return;
 
-  const mensaje = `Hola, me interesa esta propiedad: ${nombrePropiedad}`;
-  
-  // Enviar al API serverless
-  fetch(`${API_BASE}/api/lead`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ 
-      nombre, 
-      telefono: 'contacto directo',
-      interes: nombrePropiedad
-    })
-  }).catch(err => console.error('Error enviando consulta:', err));
+  const data = {
+    nombre,
+    telefono: "no ingresado",
+    interes: propiedad,
+    origen: "NFC propiedad"
+  };
 
-  // Redirigir a WhatsApp
+  enviarLead(data);
+
+  const mensaje = `Hola, me interesa esta propiedad: ${propiedad}`;
   window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }
 
@@ -114,30 +96,55 @@ document.getElementById("leadForm").addEventListener("submit", function(e){
   const telefono = e.target.telefono.value.trim();
   const interes = e.target.interes.value;
 
-  // Validar datos
-  if (!nombre || !telefono || !interes) {
-    alert('Por favor completa todos los campos');
+  if (!nombre || !telefono) {
+    alert("Completa los datos");
     return;
   }
 
-  // Enviar al API serverless de Vercel
-  fetch(`${API_BASE}/api/lead`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ nombre, telefono, interes })
-  })
-  .then(res => {
-    if (!res.ok) console.error('API error:', res.status);
-    return res.json();
-  })
-  .catch(err => console.error('Error enviando lead:', err));
+  const data = {
+    nombre,
+    telefono,
+    interes,
+    origen: "NFC formulario"
+  };
 
-  // Redirigir a WhatsApp después de un pequeño delay
+  enviarLead(data);
+
   setTimeout(() => {
-    const mensaje = `Hola, soy ${nombre}. Estoy interesado en ${interes}`;
+    const mensaje = `Hola, soy ${nombre}. Busco ${interes}`;
     window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
-  }, 500);
+  }, 300);
 });
+
+// ============================================
+// FUNCIÓN CENTRAL (ENVÍO A MAKE)
+// ============================================
+
+function enviarLead(data) {
+  // Guardar el lead para notificaciones en el dashboard
+  try {
+    LeadsManager.add({
+      nombre: data.nombre,
+      telefono: data.telefono,
+      interes: data.interes,
+      origen: data.origen || 'web',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+  } catch (err) {
+    console.warn('No se pudo almacenar el lead localmente:', err);
+  }
+
+  fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(() => console.log("Lead enviado a Make"))
+  .catch(err => console.error("Error:", err));
+}
 
 // ============================================
 // BOTONES DIRECTOS
@@ -152,26 +159,11 @@ document.getElementById("btnAlquilar").href = linkWhatsApp("alquilar");
 document.getElementById("btnVender").href = linkWhatsApp("vender mi propiedad");
 
 // ============================================
-// INICIALIZACIÓN
+// INIT
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", () => {
   renderAgentCard();
   renderProperties();
-  
-  console.log('✅ Página principal cargada correctamente');
-  console.log('📊 Propiedades cargadas:', PropertiesManager.getAll().length);
-});
-
-const lista = document.getElementById("lista");
-
-propiedades.forEach(p => {
-  const div = document.createElement("div");
-  div.className = "propiedad";
-  div.innerHTML = `
-    <h3>${p.titulo}</h3>
-    <p>${p.precio} - ${p.zona}</p>
-    <a href="${linkWhatsApp(p.titulo)}">Consultar</a>
-  `;
-  lista.appendChild(div);
+  console.log("Sistema inmobiliario NFC activo");
 });
