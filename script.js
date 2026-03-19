@@ -9,8 +9,8 @@ let numero = "5493462587692";
 // RENDERIZAR AGENTE
 // ============================================
 
-function renderAgentCard() {
-  const agent = AgentManager.get();
+async function renderAgentCard() {
+  const agent = await AgentManager.get();
   const agentContent = document.getElementById('agentContent');
 
   agentContent.innerHTML = `
@@ -31,8 +31,8 @@ function renderAgentCard() {
   `;
 }
 
-function downloadAgentVCard() {
-  const agent = AgentManager.get();
+async function downloadAgentVCard() {
+  const agent = await AgentManager.get();
   VCardUtils.downloadvCard(agent);
   alert('Contacto descargado');
 }
@@ -41,8 +41,8 @@ function downloadAgentVCard() {
 // RENDER PROPIEDADES
 // ============================================
 
-function renderProperties() {
-  const properties = PropertiesManager.getAll();
+async function renderProperties() {
+  const properties = await PropertiesManager.getAll();
   const lista = document.getElementById('lista');
 
   if (!properties.length) {
@@ -68,7 +68,7 @@ function renderProperties() {
 // CONSULTAR PROPIEDAD
 // ============================================
 
-function consultarPropiedad(propiedad) {
+async function consultarPropiedad(propiedad) {
   const nombre = prompt("Tu nombre:");
   if (!nombre) return;
 
@@ -79,7 +79,7 @@ function consultarPropiedad(propiedad) {
     origen: "NFC propiedad"
   };
 
-  enviarLead(data);
+  await enviarLead(data);
 
   const mensaje = `Hola, me interesa esta propiedad: ${propiedad}`;
   window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
@@ -89,7 +89,7 @@ function consultarPropiedad(propiedad) {
 // FORMULARIO PRINCIPAL
 // ============================================
 
-document.getElementById("leadForm").addEventListener("submit", function(e){
+document.getElementById("leadForm").addEventListener("submit", async function(e){
   e.preventDefault();
 
   const nombre = e.target.nombre.value.trim();
@@ -108,7 +108,7 @@ document.getElementById("leadForm").addEventListener("submit", function(e){
     origen: "NFC formulario"
   };
 
-  enviarLead(data);
+  await enviarLead(data);
 
   setTimeout(() => {
     const mensaje = `Hola, soy ${nombre}. Busco ${interes}`;
@@ -120,10 +120,10 @@ document.getElementById("leadForm").addEventListener("submit", function(e){
 // FUNCIÓN CENTRAL (ENVÍO A MAKE)
 // ============================================
 
-function enviarLead(data) {
+async function enviarLead(data) {
   // Guardar el lead para notificaciones en el dashboard
   try {
-    LeadsManager.add({
+    await LeadsManager.add({
       nombre: data.nombre,
       telefono: data.telefono,
       interes: data.interes,
@@ -135,15 +135,18 @@ function enviarLead(data) {
     console.warn('No se pudo almacenar el lead localmente:', err);
   }
 
-  fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  })
-  .then(() => console.log("Lead enviado a Make"))
-  .catch(err => console.error("Error:", err));
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+    console.log("Lead enviado a Make");
+  } catch (err) {
+    console.error("Error enviando lead al webhook:", err);
+  }
 }
 
 // ============================================
@@ -162,8 +165,8 @@ document.getElementById("btnVender").href = linkWhatsApp("vender mi propiedad");
 // INIT
 // ============================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderAgentCard();
-  renderProperties();
+document.addEventListener("DOMContentLoaded", async () => {
+  await renderAgentCard();
+  await renderProperties();
   console.log("Sistema inmobiliario NFC activo");
 });

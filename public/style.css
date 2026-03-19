@@ -1,40 +1,231 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #f5f5f5;
   margin: 0;
+  padding: 0;
 }
 
 .container {
-  max-width: 400px;
-  margin: auto;
+  max-width: 600px;
+  margin: 0 auto;
   padding: 20px;
-  text-align: center;
   background: white;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+h1 {
+  text-align: center;
+  margin: 20px 0 5px 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.container > p {
+  text-align: center;
+  color: #999;
+  margin: 5px 0 20px 0;
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 18px;
+  color: #333;
+  margin-top: 25px;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+/* Formulario */
+#leadForm {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 input, select, button {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
 }
 
-button {
+input:focus, select:focus {
+  outline: none;
+  border-color: black;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+input::placeholder {
+  color: #bbb;
+}
+
+#leadForm button {
   background: black;
   color: white;
   border: none;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 12px;
+  transition: background 0.3s;
+}
+
+#leadForm button:hover {
+  background: #333;
+}
+
+/* Botones directos */
+.botones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 0;
 }
 
 .botones a {
   display: block;
-  margin: 10px;
-  padding: 10px;
+  padding: 12px;
   background: #25D366;
   color: white;
   text-decoration: none;
+  text-align: center;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background 0.3s;
+  cursor: pointer;
 }
 
-#catalogo {
-  margin-top: 20px;
+.botones a:hover {
+  background: #20ba5a;
+}
+
+/* Propiedades Grid */
+.propiedades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.property-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid #eee;
+}
+
+.property-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.property-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: #f0f0f0;
+  display: block;
+}
+
+.property-info {
+  padding: 12px;
+}
+
+.property-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.property-price {
+  color: #e74c3c;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.property-details {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.btn-consultar {
+  width: 100%;
+  padding: 10px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.btn-consultar:hover {
+  background: #333;
+}
+
+.no-properties {
+  text-align: center;
+  color: #999;
+  padding: 30px 20px;
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    border-radius: 0;
+    min-height: calc(100vh - 40px);
+  }
+
+  .propiedades-grid {
+    grid-template-columns: 1fr;
+  }
+
+  input, select, button {
+    font-size: 16px;
+  }
+
+  .botones {
+    flex-direction: row;
+  }
+
+  .botones a {
+    flex: 1;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .propiedades-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .propiedad {

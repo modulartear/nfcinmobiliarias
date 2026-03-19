@@ -74,7 +74,10 @@ En Vercel Dashboard, ve a **Settings → Environment Variables** y agrega:
 ```
 WEBHOOK_URL=https://n8n.tu-dominio.com/webhook/lead
 WHATSAPP_NUMBER=5493462587692
+DATABASE_URL=<tu_cadena_de_conexión_postgres>
 ```
+
+> 🔐 Si usas la integración de **Vercel Postgres**, Vercel crea automáticamente una variable de entorno llamada `DATABASE_URL`.
 
 ### Paso 4: Deploy
 

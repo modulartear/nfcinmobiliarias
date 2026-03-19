@@ -6,6 +6,9 @@
     "dev": "npx http-server -p 3000",
     "build": "bash build.sh"
   },
+  "dependencies": {
+    "pg": "^8.11.0"
+  },
   "keywords": ["inmobiliarias", "nfc", "whatsapp", "vercel"],
   "author": "",
   "license": "MIT",

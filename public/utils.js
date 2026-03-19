@@ -2,48 +2,106 @@
 // UTILS.JS - Funciones compartidas
 // ============================================
 
-// Gestión de Propiedades (localStorage)
+// Cliente API (intenta usar la API del backend, si falla se cae a localStorage)
+const ApiClient = {
+  async request(path, options = {}) {
+    const finalOpts = {
+      credentials: 'same-origin',
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    };
+
+    const res = await fetch(path, finalOpts);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!res.ok) {
+      const error = data?.error || res.statusText;
+      throw new Error(error);
+    }
+
+    return data;
+  },
+
+  get(path) {
+    return this.request(path, { method: 'GET' });
+  },
+
+  post(path, body) {
+    return this.request(path, { method: 'POST', body: JSON.stringify(body) });
+  },
+
+  put(path, body) {
+    return this.request(path, { method: 'PUT', body: JSON.stringify(body) });
+  },
+
+  delete(path) {
+    return this.request(path, { method: 'DELETE' });
+  }
+};
+
+// Gestión de Propiedades
 const PropertiesManager = {
   STORAGE_KEY: 'nfc_properties',
-  AGENT_KEY: 'nfc_agent_data',
 
-  // Obtener todas las propiedades
-  getAll() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  },
-
-  // Agregar propiedad
-  add(property) {
-    const properties = this.getAll();
-    property.id = Date.now().toString();
-    property.createdAt = new Date().toISOString();
-    properties.push(property);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
-    return property;
-  },
-
-  // Actualizar propiedad
-  update(id, property) {
-    const properties = this.getAll();
-    const index = properties.findIndex(p => p.id === id);
-    if (index !== -1) {
-      properties[index] = { ...properties[index], ...property };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
-      return properties[index];
+  async getAll() {
+    try {
+      const data = await ApiClient.get('/api/properties');
+      return data.properties || [];
+    } catch (err) {
+      console.warn('API propiedades no disponible, usando localStorage:', err.message);
+      const fallback = localStorage.getItem(this.STORAGE_KEY);
+      return fallback ? JSON.parse(fallback) : [];
     }
-    return null;
   },
 
-  // Eliminar propiedad
-  delete(id) {
-    const properties = this.getAll().filter(p => p.id !== id);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
+  async add(property) {
+    try {
+      const data = await ApiClient.post('/api/properties', property);
+      return data.property;
+    } catch (err) {
+      console.warn('API propiedades no disponible, guardando localmente:', err.message);
+      const properties = await this.getAll();
+      const item = { ...property, id: Date.now().toString(), createdAt: new Date().toISOString() };
+      properties.unshift(item);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
+      return item;
+    }
   },
 
-  // Obtener por ID
-  getById(id) {
-    return this.getAll().find(p => p.id === id);
+  async update(id, property) {
+    try {
+      await ApiClient.put('/api/properties', { id, ...property });
+      return { id, ...property };
+    } catch (err) {
+      console.warn('API propiedades no disponible, actualizando localmente:', err.message);
+      const properties = await this.getAll();
+      const index = properties.findIndex(p => p.id === id);
+      if (index !== -1) {
+        properties[index] = { ...properties[index], ...property };
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
+        return properties[index];
+      }
+      return null;
+    }
+  },
+
+  async delete(id) {
+    try {
+      await ApiClient.delete(`/api/properties?id=${encodeURIComponent(id)}`);
+    } catch (err) {
+      console.warn('API propiedades no disponible, eliminando localmente:', err.message);
+      const properties = (await this.getAll()).filter(p => p.id !== id);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(properties));
+    }
+  },
+
+  async getById(id) {
+    const all = await this.getAll();
+    return all.find(p => p.id === id);
   }
 };
 
@@ -51,19 +109,30 @@ const PropertiesManager = {
 const AgentManager = {
   STORAGE_KEY: 'nfc_agent_data',
 
-  // Obtener datos del agente
-  get() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : this.getDefaults();
+  async get() {
+    try {
+      const data = await ApiClient.get('/api/agent');
+      if (data && data.agent) return data.agent;
+      throw new Error('No hay datos de agente');
+    } catch (err) {
+      console.warn('API agente no disponible, usando localStorage:', err.message);
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      return stored ? JSON.parse(stored) : this.getDefaults();
+    }
   },
 
-  // Guardar datos del agente
-  save(agentData) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(agentData));
-    return agentData;
+  async save(agentData) {
+    try {
+      await ApiClient.post('/api/agent', agentData);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(agentData));
+      return agentData;
+    } catch (err) {
+      console.warn('API agente no disponible, guardando localmente:', err.message);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(agentData));
+      return agentData;
+    }
   },
 
-  // Datos por defecto
   getDefaults() {
     return {
       nombre: 'Asesor Inmobiliario',
@@ -133,53 +202,93 @@ const Validators = {
 const LeadsManager = {
   STORAGE_KEY: 'nfc_leads',
 
-  getAll() {
-    const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+  async getAll() {
+    try {
+      const data = await ApiClient.get('/api/lead');
+      return data.leads || [];
+    } catch (err) {
+      console.warn('API leads no disponible, usando localStorage:', err.message);
+      const fallback = localStorage.getItem(this.STORAGE_KEY);
+      return fallback ? JSON.parse(fallback) : [];
+    }
   },
 
-  add(lead) {
-    const leads = this.getAll();
-    const item = {
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      read: false,
-      ...lead
-    };
-    leads.unshift(item); // Newest first
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
-    return item;
+  async add(lead) {
+    try {
+      const data = await ApiClient.post('/api/lead', lead);
+      return data.lead || lead;
+    } catch (err) {
+      console.warn('API leads no disponible, guardando localmente:', err.message);
+      const leads = await this.getAll();
+      const item = { id: Date.now().toString(), createdAt: new Date().toISOString(), read: false, ...lead };
+      leads.unshift(item);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+      return item;
+    }
   },
 
-  markRead(id) {
-    const leads = this.getAll();
-    const index = leads.findIndex(l => l.id === id);
-    if (index !== -1) {
-      leads[index].read = true;
+  async markRead(id) {
+    try {
+      await ApiClient.put('/api/lead', { id, read: true });
+    } catch (err) {
+      console.warn('API leads no disponible, guardando estado localmente:', err.message);
+      const leads = await this.getAll();
+      const index = leads.findIndex(l => l.id === id);
+      if (index !== -1) {
+        leads[index].read = true;
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+      }
+    }
+  },
+
+  async update(id, changes) {
+    try {
+      await ApiClient.put('/api/lead', { id, ...changes });
+      return { id, ...changes };
+    } catch (err) {
+      console.warn('API leads no disponible, actualizando localmente:', err.message);
+      const leads = await this.getAll();
+      const index = leads.findIndex(l => l.id === id);
+      if (index === -1) return null;
+      leads[index] = { ...leads[index], ...changes };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+      return leads[index];
+    }
+  },
+
+  async delete(id) {
+    try {
+      await ApiClient.delete(`/api/lead?id=${encodeURIComponent(id)}`);
+    } catch (err) {
+      console.warn('API leads no disponible, eliminando localmente:', err.message);
+      const leads = (await this.getAll()).filter(l => l.id !== id);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
     }
   },
 
-  update(id, changes) {
-    const leads = this.getAll();
-    const index = leads.findIndex(l => l.id === id);
-    if (index === -1) return null;
-    leads[index] = { ...leads[index], ...changes };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
-    return leads[index];
+  async markAllRead() {
+    try {
+      const leads = await this.getAll();
+      await Promise.all(leads.map(l => ApiClient.put('/api/lead', { id: l.id, read: true })));
+    } catch (err) {
+      console.warn('API leads no disponible, marcando localmente:', err.message);
+      const leads = (await this.getAll()).map(l => ({ ...l, read: true }));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+    }
   },
 
-  markAllRead() {
-    const leads = this.getAll().map(l => ({ ...l, read: true }));
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(leads));
+  async clear() {
+    try {
+      await ApiClient.delete('/api/lead');
+    } catch (err) {
+      console.warn('API leads no disponible, borrando localmente:', err.message);
+      localStorage.removeItem(this.STORAGE_KEY);
+    }
   },
 
-  clear() {
-    localStorage.removeItem(this.STORAGE_KEY);
-  },
-
-  countUnread() {
-    return this.getAll().filter(l => !l.read).length;
+  async countUnread() {
+    const leads = await this.getAll();
+    return leads.filter(l => !l.read).length;
   }
 };
 
@@ -196,19 +305,36 @@ const PasswordManager = {
   },
 
   async set(password) {
+    try {
+      await ApiClient.post('/api/auth', { password });
+    } catch (err) {
+      console.warn('API auth no disponible, guardando localmente:', err.message);
+    }
     const hashed = await this.hash(password);
     localStorage.setItem(this.STORAGE_KEY, hashed);
   },
 
   async verify(password) {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (!stored) return false;
-    const hashed = await this.hash(password);
-    return stored === hashed;
+    try {
+      const res = await ApiClient.post('/api/auth', { password });
+      return res.success === true;
+    } catch (err) {
+      console.warn('API auth no disponible, verificando localmente:', err.message);
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) return false;
+      const hashed = await this.hash(password);
+      return stored === hashed;
+    }
   },
 
-  isSet() {
-    return !!localStorage.getItem(this.STORAGE_KEY);
+  async isSet() {
+    try {
+      const res = await ApiClient.get('/api/auth');
+      return res.exists === true;
+    } catch (err) {
+      console.warn('API auth no disponible, revisando localmente:', err.message);
+      return !!localStorage.getItem(this.STORAGE_KEY);
+    }
   },
 
   clear() {

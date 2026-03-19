@@ -95,7 +95,7 @@ async function handleAddProperty(event) {
     }
 
     // Guardar
-    PropertiesManager.add(property);
+    await PropertiesManager.add(property);
     showAlert('alertProperty', '✅ Propiedad guardada correctamente', 'success');
 
     // Limpiar formulario
@@ -103,7 +103,7 @@ async function handleAddProperty(event) {
     document.getElementById('propImagePreview').style.display = 'none';
 
     // Actualizar lista
-    renderProperties();
+    await renderProperties();
 
   } catch (error) {
     console.error('Error:', error);
@@ -111,8 +111,8 @@ async function handleAddProperty(event) {
   }
 }
 
-function renderProperties() {
-  const properties = PropertiesManager.getAll();
+async function renderProperties() {
+  const properties = await PropertiesManager.getAll();
   const container = document.getElementById('propertiesList');
 
   if (properties.length === 0) {
@@ -129,7 +129,7 @@ function renderProperties() {
         <div class="property-details">
           <strong>Tipo:</strong> ${prop.tipo}<br>
           <strong>Zona:</strong> ${prop.zona}<br>
-          <strong>Características:</strong> ${prop.caracteristicas.substring(0, 40)}...
+          <strong>Características:</strong> ${prop.caracteristicas ? prop.caracteristicas.substring(0, 40) : ''}...
         </div>
         <div class="property-actions">
           <button class="btn btn-secondary" onclick="editProperty('${prop.id}')">✏️ Editar</button>
@@ -140,10 +140,10 @@ function renderProperties() {
   `).join('');
 }
 
-function updateLeadsBadge() {
+async function updateLeadsBadge() {
   const badge = document.getElementById('leadsBadge');
   if (!badge) return;
-  const count = LeadsManager.countUnread();
+  const count = await LeadsManager.countUnread();
   if (count > 0) {
     badge.textContent = count;
     badge.style.display = 'inline-block';
@@ -152,15 +152,15 @@ function updateLeadsBadge() {
   }
 }
 
-function renderLeads() {
-  const leads = LeadsManager.getAll();
+async function renderLeads() {
+  const leads = await LeadsManager.getAll();
   const container = document.getElementById('leadsList');
 
   if (!container) return;
 
   if (leads.length === 0) {
     container.innerHTML = '<div class="no-properties">No hay leads recibidos aún</div>';
-    updateLeadsBadge();
+    await updateLeadsBadge();
     return;
   }
 
@@ -183,32 +183,32 @@ function renderLeads() {
     </div>
   `).join('');
 
-  updateLeadsBadge();
+  await updateLeadsBadge();
 }
 
-function toggleLeadRead(id) {
-  const leads = LeadsManager.getAll();
+async function toggleLeadRead(id) {
+  const leads = await LeadsManager.getAll();
   const lead = leads.find(l => l.id === id);
   if (!lead) return;
-  LeadsManager.update(id, { read: !lead.read });
-  renderLeads();
+
+  await LeadsManager.update(id, { read: !lead.read });
+  await renderLeads();
 }
 
-function deleteLead(id) {
-  const leads = LeadsManager.getAll().filter(l => l.id !== id);
-  localStorage.setItem(LeadsManager.STORAGE_KEY, JSON.stringify(leads));
-  renderLeads();
+async function deleteLead(id) {
+  await LeadsManager.delete(id);
+  await renderLeads();
 }
 
-function markAllLeadsRead() {
-  LeadsManager.markAllRead();
-  renderLeads();
+async function markAllLeadsRead() {
+  await LeadsManager.markAllRead();
+  await renderLeads();
 }
 
-function clearLeads() {
+async function clearLeads() {
   if (confirm('¿Eliminar todos los leads?')) {
-    LeadsManager.clear();
-    renderLeads();
+    await LeadsManager.clear();
+    await renderLeads();
   }
 }
 
@@ -217,11 +217,11 @@ function editProperty(id) {
   // TODO: Implementar edición
 }
 
-function deleteProperty(id) {
+async function deleteProperty(id) {
   if (confirm('¿Estás seguro de que deseas eliminar esta propiedad?')) {
-    PropertiesManager.delete(id);
+    await PropertiesManager.delete(id);
     showAlert('alertProperty', '✅ Propiedad eliminada', 'success');
-    renderProperties();
+    await renderProperties();
   }
 }
 
@@ -298,8 +298,8 @@ async function handleSaveAgent(event) {
   }
 }
 
-function renderAgentPreview() {
-  const agent = AgentManager.get();
+async function renderAgentPreview() {
+  const agent = await AgentManager.get();
   const qrUrl = VCardUtils.generateQRUrl(agent);
   
   const container = document.getElementById('agentPreview');
@@ -326,8 +326,8 @@ function renderAgentPreview() {
   `;
 }
 
-function downloadAgentVCard() {
-  const agent = AgentManager.get();
+async function downloadAgentVCard() {
+  const agent = await AgentManager.get();
   VCardUtils.downloadvCard(agent);
 }
 
@@ -357,12 +357,12 @@ async function initAuth() {
   const hint = document.getElementById('loginHint');
 
   const isAuthenticated = sessionStorage.getItem('nfc_dashboard_authenticated') === 'true';
-  const isSet = PasswordManager.isSet();
+  const isSet = await PasswordManager.isSet();
 
   if (isAuthenticated) {
     overlay.style.display = 'none';
     container.style.display = 'block';
-    initDashboard();
+    await initDashboard();
     return;
   }
 
@@ -386,7 +386,8 @@ async function handleLogin() {
     return;
   }
 
-  if (!PasswordManager.isSet()) {
+  const isSet = await PasswordManager.isSet();
+  if (!isSet) {
     await PasswordManager.set(password);
   }
 
@@ -400,29 +401,29 @@ async function handleLogin() {
   sessionStorage.setItem('nfc_dashboard_authenticated', 'true');
   document.getElementById('loginOverlay').style.display = 'none';
   document.querySelector('.dashboard-container').style.display = 'block';
-  initDashboard();
+  await initDashboard();
 }
 
 async function initDashboard() {
-  const agent = AgentManager.get();
+  const agent = await AgentManager.get();
   if (agent) {
-    document.getElementById('agentName').value = agent.nombre;
-    document.getElementById('agentEmail').value = agent.email;
-    document.getElementById('agentPhone').value = agent.telefono;
-    document.getElementById('agentCompany').value = agent.empresa;
-    document.getElementById('agentPresentation').value = agent.presentacion;
+    document.getElementById('agentName').value = agent.nombre || '';
+    document.getElementById('agentEmail').value = agent.email || '';
+    document.getElementById('agentPhone').value = agent.telefono || '';
+    document.getElementById('agentCompany').value = agent.empresa || '';
+    document.getElementById('agentPresentation').value = agent.presentacion || '';
   }
 
-  renderProperties();
-  renderAgentPreview();
-  updateLeadsBadge();
+  await renderProperties();
+  await renderAgentPreview();
+  await updateLeadsBadge();
 
   // Escuchar cambios en localStorage para actualizar leads en vivo
-  window.addEventListener('storage', (event) => {
+  window.addEventListener('storage', async (event) => {
     if (event.key === LeadsManager.STORAGE_KEY) {
-      updateLeadsBadge();
+      await updateLeadsBadge();
       if (document.getElementById('leads').classList.contains('active')) {
-        renderLeads();
+        await renderLeads();
       }
     }
   });
@@ -431,6 +432,6 @@ async function initDashboard() {
 }
 
 // Iniciar autenticación al cargar la página
-document.addEventListener('DOMContentLoaded', () => {
-  initAuth();
+document.addEventListener('DOMContentLoaded', async () => {
+  await initAuth();
 });
