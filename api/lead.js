@@ -87,7 +87,17 @@ export default async function handler(req, res) {
     // Retornar lista de leads y/o info de status
     try {
       const result = await query('SELECT * FROM leads ORDER BY created_at DESC LIMIT 200');
-      return res.status(200).json({ leads: result.rows });
+      const leads = result.rows.map((row) => ({
+        id: row.id,
+        nombre: row.nombre,
+        telefono: row.telefono,
+        interes: row.interes,
+        origen: row.origen,
+        read: row.read,
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+        updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null
+      }));
+      return res.status(200).json({ leads });
     } catch (error) {
       console.error('Error leyendo leads:', error);
       return res.status(200).json({ leads: [] });
