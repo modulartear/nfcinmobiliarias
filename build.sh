@@ -8,10 +8,13 @@ mkdir -p public
 
 # Copiar archivos estáticos
 cp index.html public/
+cp dashboard.html public/
 cp style.css public/
 cp config.json public/
 cp config.js public/
 cp script.js public/
+cp dashboard.js public/
+cp utils.js public/
 
 # Copiar API serverless
 rm -rf public/api 2>/dev/null
