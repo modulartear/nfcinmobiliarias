@@ -1,0 +1,13 @@
+{
+  "name": "nfc-inmobiliarias",
+  "version": "1.0.0",
+  "description": "Asesor Inmobiliario - Deploy en Vercel",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "build": "bash build.sh"
+  },
+  "keywords": ["inmobiliarias", "nfc", "whatsapp", "vercel"],
+  "author": "",
+  "license": "MIT",
+  "private": true
+}

@@ -1,0 +1,44 @@
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  margin: 0;
+}
+
+.container {
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
+  background: white;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+button {
+  background: black;
+  color: white;
+  border: none;
+}
+
+.botones a {
+  display: block;
+  margin: 10px;
+  padding: 10px;
+  background: #25D366;
+  color: white;
+  text-decoration: none;
+}
+
+#catalogo {
+  margin-top: 20px;
+}
+
+.propiedad {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-top: 10px;
+}

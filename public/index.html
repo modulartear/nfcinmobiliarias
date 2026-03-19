@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Asesor Inmobiliario</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h1>Tu próxima propiedad empieza acá</h1>
+  <p>Escaneaste mi tarjeta inteligente</p>
+
+  <form id="leadForm">
+    <input type="text" name="nombre" placeholder="Tu nombre" required>
+    <input type="tel" name="telefono" placeholder="Tu WhatsApp" required>
+
+    <select name="interes">
+      <option value="comprar">Comprar</option>
+      <option value="alquilar">Alquilar</option>
+      <option value="vender">Vender</option>
+    </select>
+
+    <button type="submit">Ver propiedades</button>
+  </form>
+
+  <div class="botones">
+    <a id="btnComprar" href="#">Comprar</a>
+    <a id="btnAlquilar" href="#">Alquilar</a>
+    <a id="btnVender" href="#">Vender</a>
+  </div>
+
+  <div id="catalogo">
+    <h2>Propiedades destacadas</h2>
+    <div id="lista"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

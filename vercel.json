@@ -1,0 +1,5 @@
+{
+  "buildCommand": "mkdir -p public && cp index.html style.css config.json config.js script.js public/ && rm -rf public/api && cp -r api public/",
+  "outputDirectory": "public",
+  "cleanUrls": false
+}
