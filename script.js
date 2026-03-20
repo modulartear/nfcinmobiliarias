@@ -69,19 +69,38 @@ async function renderProperties() {
 // ============================================
 
 async function consultarPropiedad(propiedad) {
-  const nombre = prompt("Tu nombre:");
+  // Obtener datos del cliente
+  const nombre = prompt("Tu nombre completo:");
   if (!nombre) return;
 
+  const celular = prompt("Tu número de celular:");
+  if (!celular) return;
+
+  // Obtener datos de la propiedad
+  const propiedades = await PropertiesManager.getAll();
+  const prop = propiedades.find(p => p.titulo === propiedad);
+
+  // Preparar datos con información completa
   const data = {
     nombre,
-    telefono: "no ingresado",
+    telefono: celular,
     interes: propiedad,
-    origen: "NFC propiedad"
+    origen: "NFC propiedad",
+    // Datos adicionales de la propiedad
+    propiedad_datos: prop ? {
+      titulo: prop.titulo,
+      precio: prop.precio,
+      zona: prop.zona,
+      imagen: prop.imagen,
+      descripcion: prop.descripcion,
+      tipo: prop.tipo
+    } : null
   };
 
   await enviarLead(data);
 
-  const mensaje = `Hola, me interesa esta propiedad: ${propiedad}`;
+  // Mensaje mejorado con foto y datos
+  const mensaje = `Hola, soy ${nombre}. Mi celular es ${celular}.\n\nMe interesa esta propiedad:\n${propiedad}${prop ? `\n💰 ${prop.precio}\n📍 ${prop.zona}` : ''}`;
   window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }
 
@@ -111,7 +130,7 @@ document.getElementById("leadForm").addEventListener("submit", async function(e)
   await enviarLead(data);
 
   setTimeout(() => {
-    const mensaje = `Hola, soy ${nombre}. Busco ${interes}`;
+    const mensaje = `Hola, soy ${nombre}.\n📱 Mi celular: ${telefono}\n\nBusco: ${interes}`;
     window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
   }, 300);
 });

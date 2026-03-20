@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { nombre, telefono, interes, origen } = req.body;
+      const { nombre, telefono, interes, origen, propiedad_datos } = req.body;
 
       if (!nombre || !telefono || !interes) {
         return res.status(400).json({ error: 'Datos incompletos' });
@@ -54,18 +54,33 @@ export default async function handler(req, res) {
       const webhookUrl = process.env.WEBHOOK_URL;
       if (webhookUrl) {
         try {
+          // Preparar datos enriquecidos para el webhook
+          const webhookData = {
+            id,
+            nombre,
+            telefono,
+            interes,
+            origen: origen || 'web',
+            createdAt,
+            source: 'vercel'
+          };
+
+          // Agregar datos de la propiedad si existen
+          if (propiedad_datos) {
+            webhookData.propiedad = {
+              titulo: propiedad_datos.titulo,
+              precio: propiedad_datos.precio,
+              zona: propiedad_datos.zona,
+              tipo: propiedad_datos.tipo,
+              descripcion: propiedad_datos.descripcion,
+              imagen: propiedad_datos.imagen
+            };
+          }
+
           await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id,
-              nombre,
-              telefono,
-              interes,
-              origen: origen || 'web',
-              createdAt,
-              source: 'vercel'
-            })
+            body: JSON.stringify(webhookData)
           });
         } catch (webhookError) {
           console.error('Webhook error:', webhookError);
