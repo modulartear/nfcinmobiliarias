@@ -203,20 +203,51 @@ const LeadsManager = {
   STORAGE_KEY: 'nfc_leads',
 
   async getAll() {
+    const fallback = localStorage.getItem(this.STORAGE_KEY);
+    const localLeads = fallback ? JSON.parse(fallback) : [];
+
     try {
       const data = await ApiClient.get('/api/lead');
-      return data.leads || [];
+      let apiLeads = (data.leads || []).map((l) => ({
+        id: l.id,
+        nombre: l.nombre,
+        telefono: l.telefono,
+        interes: l.interes,
+        origen: l.origen,
+        read: !!l.read,
+        createdAt: l.createdAt || l.created_at || (l.created_at ? new Date(l.created_at).toISOString() : null),
+        updatedAt: l.updatedAt || l.updated_at || (l.updated_at ? new Date(l.updated_at).toISOString() : null)
+      }));
+
+      // Combinar con los leads locales que no existan aún en la API (offline/pendientes)
+      const knownIds = new Set(apiLeads.map((l) => l.id));
+      const merged = [...apiLeads];
+      for (const local of localLeads) {
+        if (!knownIds.has(local.id)) {
+          merged.unshift(local);
+        }
+      }
+
+      // Guardar una copia local para mostrar el dashboard incluso si cae el API
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(merged));
+      return merged;
     } catch (err) {
       console.warn('API leads no disponible, usando localStorage:', err.message);
-      const fallback = localStorage.getItem(this.STORAGE_KEY);
-      return fallback ? JSON.parse(fallback) : [];
+      return localLeads;
     }
   },
 
   async add(lead) {
     try {
       const data = await ApiClient.post('/api/lead', lead);
-      return data.lead || lead;
+      const payload = data.lead || { ...lead, id: lead.id || Date.now().toString(), createdAt: lead.createdAt || new Date().toISOString() };
+
+      // Mantener cache local actualizada en caso de que el dashboard también consulte localStorage
+      const leads = await this.getAll();
+      const updated = [payload, ...leads.filter((l) => l.id !== payload.id)];
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
+
+      return payload;
     } catch (err) {
       console.warn('API leads no disponible, guardando localmente:', err.message);
       const leads = await this.getAll();
