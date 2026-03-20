@@ -257,6 +257,9 @@ async function loadNFCData() {
         // Guardar datos globales para usar en script.js
         window.nfcData = data;
         window.numero = data.nfc.numero_whatsapp;
+        if (typeof numero !== 'undefined') {
+          numero = data.nfc.numero_whatsapp;
+        }
       }
     } catch (error) {
       console.warn('Error cargando NFC:', error);
@@ -264,8 +267,12 @@ async function loadNFCData() {
   }
 }
 
-// Cargar NFC data antes de ejecutar script.js
-window.addEventListener('DOMContentLoaded', loadNFCData);
+// Cargar NFC data y renderizar después del DOMContentLoaded
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadNFCData();
+  if (typeof renderAgentCard === 'function') await renderAgentCard();
+  if (typeof renderProperties === 'function') await renderProperties();
+});
 </script>
 
 </body>

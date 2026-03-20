@@ -205,8 +205,6 @@ document.getElementById("btnVender").href = linkWhatsApp("vender mi propiedad");
 // INIT
 // ============================================
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await renderAgentCard();
-  await renderProperties();
+document.addEventListener("DOMContentLoaded", () => {
   console.log("Sistema inmobiliario NFC activo");
 });
