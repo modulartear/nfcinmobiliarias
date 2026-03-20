@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - Gestor NFC</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background: #f5f5f5;
+    }
+
+    .admin-header {
+      background: black;
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .admin-header h1 {
+      font-size: 24px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-info button {
+      padding: 8px 15px;
+      background: #c33;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .tab-button {
+      padding: 12px 20px;
+      background: #f0f0f0;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab-button.active {
+      background: black;
+      color: white;
+      border-bottom-color: black;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .form-section {
+      display: grid;
+      gap: 15px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      outline: none;
+      border-color: black;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: black;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #333;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-danger {
+      background: #c33;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #a22;
+    }
+
+    .nfc-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .nfc-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid black;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .nfc-card h3 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .nfc-info {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .nfc-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #3c3;
+      color: white;
+      border-radius: 3px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .nfc-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nfc-actions button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .copy-btn {
+      background: #667eea;
+      color: white;
+    }
+
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+
+    .delete-btn {
+      background: #c33;
+      color: white;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+
+    .message.error {
+      background: #fee;
+      color: #c33;
+      border-left: 3px solid #c33;
+    }
+
+    .message.success {
+      background: #efe;
+      color: #3c3;
+      border-left: 3px solid #3c3;
+    }
+
+    .qr-link {
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 12px;
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🏢 Panel Admin NFC</h1>
+  <div class="user-info">
+    <div>
+      <p id="userDisplay" style="margin: 0; margin-bottom: 5px;"></p>
+      <small id="userEmail" style="color: #aaa;"></small>
+    </div>
+    <button onclick="logout()">Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="admin-container">
+  <div class="tabs">
+    <button class="tab-button active" onclick="switchTab('nfcs')">📱 Mis NFCs</button>
+    <button class="tab-button" onclick="switchTab('agent')">👤 Mi Perfil</button>
+    <button class="tab-button" onclick="switchTab('properties')">🏠 Propiedades</button>
+  </div>
+
+  <!-- TAB: MIS NFCs -->
+  <div id="nfcs-tab" class="tab-content active">
+    <div class="card">
+      <h2>Crear Nuevo NFC</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>Nombre del NFC</label>
+          <input type="text" id="nfcNombre" placeholder="Ej: NFC Juan Inmobiliario">
+        </div>
+        <div class="form-group">
+          <label>Número WhatsApp</label>
+          <input type="tel" id="nfcWhatsapp" placeholder="Ej: +5491234567890">
+        </div>
+        <button class="btn btn-primary" onclick="createNFC()">Crear NFC</button>
+        <div id="nfcMessage"></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 30px;">Mis NFCs Activos</h2>
+    <div id="nfcsList" class="nfc-list">
+      <p style="color: #999;">Cargando NFCs...</p>
+    </div>
+  </div>
+
+  <!-- TAB: MI PERFIL (AGENTE) -->
+  <div id="agent-tab" class="tab-content">
+    <div class="card">
+      <h2>Mi Información de Agente</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="agentNombre" placeholder="Tu nombre completo">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="agentEmail" placeholder="Tu email">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="agentTelefono" placeholder="Tu teléfono">
+        </div>
+        <div class="form-group">
+          <label>Empresa</label>
+          <input type="text" id="agentEmpresa" placeholder="Tu empresa">
+        </div>
+        <div class="form-group">
+          <label>Presentación</label>
+          <textarea id="agentPresentacion" placeholder="Tu presentación profesional" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto (URL)</label>
+          <input type="url" id="agentFoto" placeholder="https://ejemplo.com/foto.jpg">
+        </div>
+        <button class="btn btn-primary" onclick="saveAgent()">Guardar Perfil</button>
+        <div id="agentMessage"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PROPIEDADES -->
+  <div id="properties-tab" class="tab-content">
+    <div class="card">
+      <h2>Nueva Propiedad</h2>
+      <div class="form-section">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="propTitulo" placeholder="Ej: Departamento 2 Ambientes">
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="propDescripcion" placeholder="Descripción detallada" rows="4"></textarea>
+        </div>
+        <div class="button-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Precio</label>
+            <input type="text" id="propPrecio" placeholder="$250.000">
+          </div>
+          <div class="form-group">
+            <label>Zona</label>
+            <input type="text" id="propZona" placeholder="Palermo, CABA">
+          </div>
+        </div>
+        <div class="button-group" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="propTipo">
+              <option value="">Selecciona tipo</option>
+              <option value="Departamento">Departamento</option>
+              <option value="Casa">Casa</option>
+              <option value="PH">PH</option>
+              <option value="Local">Local</option>
+              <option value="Oficina">Oficina</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Característica</label>
+            <input type="text" id="propCaracteristicas" placeholder="Ej: 2 ambientes, 1 baño">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Imagen (URL)</label>
+          <input type="url" id="propImagen" placeholder="https://ejemplo.com/foto-propiedad.jpg">
+        </div>
+        <button class="btn btn-primary" onclick="createProperty()">Crear Propiedad</button>
+        <div id="propertyMessage"></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 30px;">Mis Propiedades</h2>
+    <div id="propertiesList" class="nfc-list">
+      <p style="color: #999;">Cargando propiedades...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUser = null;
+
+// Cargar datos del usuario al abrir
+window.addEventListener('load', () => {
+  const user = localStorage.getItem('user');
+  if (!user) {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  currentUser = JSON.parse(user);
+  document.getElementById('userDisplay').textContent = `${currentUser.nombre} (${currentUser.username})`;
+  document.getElementById('userEmail').textContent = currentUser.email;
+
+  loadNFCs();
+  loadAgent();
+  loadProperties();
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(tab + '-tab').classList.add('active');
+  event.target.classList.add('active');
+}
+
+function logout() {
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  window.location.href = '/login.html';
+}
+
+// ========== NFCs ==========
+
+async function createNFC() {
+  const nombre = document.getElementById('nfcNombre').value.trim();
+  const numero_whatsapp = document.getElementById('nfcWhatsapp').value.trim();
+  const msgDiv = document.getElementById('nfcMessage');
+
+  if (!nombre || !numero_whatsapp) {
+    msgDiv.innerHTML = '<div class="message error">Completa todos los campos</div>';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/auth?action=create-nfc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: currentUser.id,
+        nombre,
+        numero_whatsapp
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      msgDiv.innerHTML = `<div class="message error">${data.error}</div>`;
+      return;
+    }
+
+    msgDiv.innerHTML = '<div class="message success">NFC creado correctamente ✓</div>';
+    document.getElementById('nfcNombre').value = '';
+    document.getElementById('nfcWhatsapp').value = '';
+    
+    setTimeout(() => loadNFCs(), 1000);
+  } catch (error) {
+    msgDiv.innerHTML = `<div class="message error">Error: ${error.message}</div>`;
+  }
+}
+
+async function loadNFCs() {
+  try {
+    const response = await fetch(`/api/auth?action=get-nfcs&user_id=${currentUser.id}`);
+    const data = await response.json();
+
+    const list = document.getElementById('nfcsList');
+    
+    if (!data.nfcs || data.nfcs.length === 0) {
+      list.innerHTML = '<p style="color: #999;">No tienes NFCs aún</p>';
+      return;
+    }
+
+    list.innerHTML = data.nfcs.map(nfc => `
+      <div class="nfc-card">
+        <h3>${nfc.nombre}</h3>
+        <div class="nfc-badge">✓ Activo</div>
+        <div class="nfc-info">
+          <strong>WhatsApp:</strong> ${nfc.numero_whatsapp}
+        </div>
+        <div class="nfc-info">
+          <strong>ID NFC:</strong> ${nfc.id}
+        </div>
+        <div class="qr-link">
+          URL: https://nfc.tudominio.com/?nfc_id=${nfc.id}
+        </div>
+        <div class="nfc-actions" style="margin-top: 10px;">
+          <button class="copy-btn" onclick="copyToClipboard('https://nfc.tudominio.com/?nfc_id=${nfc.id}')">
+            📋 Copiar Link
+          </button>
+          <button class="delete-btn" onclick="deleteNFC('${nfc.id}')">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error cargando NFCs:', error);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Link copiado al portapapeles ✓');
+  });
+}
+
+async function deleteNFC(nfcId) {
+  if (!confirm('¿Eliminar este NFC?')) return;
+  
+  try {
+    // Aquí irá la llamada a la API cuando la implementemos
+    alert('Funcionalidad en desarrollo');
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+// ========== AGENT ==========
+
+async function saveAgent() {
+  const nombre = document.getElementById('agentNombre').value.trim();
+  const email = document.getElementById('agentEmail').value.trim();
+  const telefono = document.getElementById('agentTelefono').value.trim();
+  const empresa = document.getElementById('agentEmpresa').value.trim();
+  const presentacion = document.getElementById('agentPresentacion').value.trim();
+  const foto = document.getElementById('agentFoto').value.trim();
+  const msgDiv = document.getElementById('agentMessage');
+
+  try {
+    const response = await fetch('/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre,
+        email,
+        telefono,
+        empresa,
+        presentacion,
+        foto,
+        user_id: currentUser.id
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Error guardando perfil');
+    }
+
+    msgDiv.innerHTML = '<div class="message success">Perfil guardado correctamente ✓</div>';
+  } catch (error) {
+    msgDiv.innerHTML = `<div class="message error">Error: ${error.message}</div>`;
+  }
+}
+
+async function loadAgent() {
+  try {
+    const response = await fetch('/api/agent');
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const agent = data.agent;
+
+    if (agent) {
+      document.getElementById('agentNombre').value = agent.nombre || '';
+      document.getElementById('agentEmail').value = agent.email || '';
+      document.getElementById('agentTelefono').value = agent.telefono || '';
+      document.getElementById('agentEmpresa').value = agent.empresa || '';
+      document.getElementById('agentPresentacion').value = agent.presentacion || '';
+      document.getElementById('agentFoto').value = agent.foto || '';
+    }
+  } catch (error) {
+    console.error('Error cargando agente:', error);
+  }
+}
+
+// ========== PROPIEDADES ==========
+
+async function createProperty() {
+  const titulo = document.getElementById('propTitulo').value.trim();
+  const descripcion = document.getElementById('propDescripcion').value.trim();
+  const precio = document.getElementById('propPrecio').value.trim();
+  const zona = document.getElementById('propZona').value.trim();
+  const tipo = document.getElementById('propTipo').value;
+  const caracteristicas = document.getElementById('propCaracteristicas').value.trim();
+  const imagen = document.getElementById('propImagen').value.trim();
+  const msgDiv = document.getElementById('propertyMessage');
+
+  if (!titulo || !descripcion || !precio || !zona || !tipo) {
+    msgDiv.innerHTML = '<div class="message error">Completa los campos requeridos</div>';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/properties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo,
+        descripcion,
+        precio,
+        zona,
+        tipo,
+        caracteristicas,
+        imagen,
+        user_id: currentUser.id
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Error creando propiedad');
+    }
+
+    msgDiv.innerHTML = '<div class="message success">Propiedad creada ✓</div>';
+    
+    // Limpiar formulario
+    document.getElementById('propTitulo').value = '';
+    document.getElementById('propDescripcion').value = '';
+    document.getElementById('propPrecio').value = '';
+    document.getElementById('propZona').value = '';
+    document.getElementById('propTipo').value = '';
+    document.getElementById('propCaracteristicas').value = '';
+    document.getElementById('propImagen').value = '';
+
+    setTimeout(() => loadProperties(), 1000);
+  } catch (error) {
+    msgDiv.innerHTML = `<div class="message error">Error: ${error.message}</div>`;
+  }
+}
+
+async function loadProperties() {
+  try {
+    const response = await fetch('/api/properties');
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const properties = data.properties || [];
+
+    const list = document.getElementById('propertiesList');
+    
+    if (properties.length === 0) {
+      list.innerHTML = '<p style="color: #999;">No tienes propiedades aún</p>';
+      return;
+    }
+
+    list.innerHTML = properties.map(prop => `
+      <div class="nfc-card">
+        <h3>${prop.titulo}</h3>
+        <div class="nfc-info">
+          <strong>Precio:</strong> ${prop.precio} | <strong>Zona:</strong> ${prop.zona}
+        </div>
+        <div class="nfc-info">
+          <strong>Tipo:</strong> ${prop.tipo}
+        </div>
+        <div class="nfc-info">
+          <em>${prop.descripcion}</em>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error cargando propiedades:', error);
+  }
+}
+</script>
+
+</body>
+</html>

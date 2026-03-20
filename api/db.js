@@ -40,20 +40,39 @@ export async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS dashboard_user (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE,
       password_hash TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      nombre TEXT,
+      empresa TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS nfc_device (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES dashboard_user(id) ON DELETE CASCADE,
+      nombre TEXT,
+      descripcion TEXT,
+      numero_whatsapp TEXT,
+      activo BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS agent (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES dashboard_user(id) ON DELETE CASCADE,
       nombre TEXT,
       email TEXT,
       telefono TEXT,
       empresa TEXT,
       presentacion TEXT,
       foto TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
@@ -61,6 +80,7 @@ export async function ensureSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS properties (
       id TEXT PRIMARY KEY,
+      user_id INTEGER REFERENCES dashboard_user(id) ON DELETE CASCADE,
       titulo TEXT,
       descripcion TEXT,
       precio TEXT,
@@ -76,6 +96,7 @@ export async function ensureSchema() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS leads (
       id TEXT PRIMARY KEY,
+      user_id INTEGER REFERENCES dashboard_user(id) ON DELETE CASCADE,
       nombre TEXT,
       telefono TEXT,
       interes TEXT,

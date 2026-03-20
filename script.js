@@ -10,7 +10,23 @@ let numero = "5493462587692";
 // ============================================
 
 async function renderAgentCard() {
-  const agent = await AgentManager.get();
+  let agent = null;
+
+  // Si hay datos de NFC cargados, usar esos datos
+  if (window.nfcData && window.nfcData.agent) {
+    agent = window.nfcData.agent;
+  } else {
+    // Si no, intentar cargar del API
+    try {
+      const response = await fetch('/api/agent');
+      const data = await response.json();
+      agent = data.agent;
+    } catch (err) {
+      console.warn('No se pudo cargar el agente:', err);
+      return;
+    }
+  }
+
   const agentContent = document.getElementById('agentContent');
 
   agentContent.innerHTML = `
@@ -42,7 +58,16 @@ async function downloadAgentVCard() {
 // ============================================
 
 async function renderProperties() {
-  const properties = await PropertiesManager.getAll();
+  let properties = [];
+
+  // Si hay datos de NFC cargados, usar esos datos
+  if (window.nfcData && window.nfcData.properties) {
+    properties = window.nfcData.properties;
+  } else {
+    // Si no, intentar cargar del API
+    properties = await PropertiesManager.getAll();
+  }
+
   const lista = document.getElementById('lista');
 
   if (!properties.length) {
@@ -56,7 +81,7 @@ async function renderProperties() {
       <div>
         <h3>${prop.titulo}</h3>
         <p>${prop.precio} - ${prop.zona}</p>
-        <button onclick="consultarPropiedad('${prop.titulo}')">
+        <button onclick="consultarPropiedad('${prop.titulo}', '${prop.imagen}', '${prop.precio}', '${prop.zona}')">
           Consultar
         </button>
       </div>
@@ -68,17 +93,13 @@ async function renderProperties() {
 // CONSULTAR PROPIEDAD
 // ============================================
 
-async function consultarPropiedad(propiedad) {
+async function consultarPropiedad(propiedad, imagen, precio, zona) {
   // Obtener datos del cliente
   const nombre = prompt("Tu nombre completo:");
   if (!nombre) return;
 
   const celular = prompt("Tu número de celular:");
   if (!celular) return;
-
-  // Obtener datos de la propiedad
-  const propiedades = await PropertiesManager.getAll();
-  const prop = propiedades.find(p => p.titulo === propiedad);
 
   // Preparar datos con información completa
   const data = {
@@ -87,20 +108,20 @@ async function consultarPropiedad(propiedad) {
     interes: propiedad,
     origen: "NFC propiedad",
     // Datos adicionales de la propiedad
-    propiedad_datos: prop ? {
-      titulo: prop.titulo,
-      precio: prop.precio,
-      zona: prop.zona,
-      imagen: prop.imagen,
-      descripcion: prop.descripcion,
-      tipo: prop.tipo
-    } : null
+    propiedad_datos: {
+      titulo: propiedad,
+      precio: precio,
+      zona: zona,
+      imagen: imagen,
+      descripcion: propiedad,
+      tipo: "Propiedad"
+    }
   };
 
   await enviarLead(data);
 
   // Mensaje mejorado con foto y datos
-  const mensaje = `Hola, soy ${nombre}. Mi celular es ${celular}.\n\nMe interesa esta propiedad:\n${propiedad}${prop ? `\n💰 ${prop.precio}\n📍 ${prop.zona}` : ''}`;
+  const mensaje = `Hola, soy ${nombre}. Mi celular es ${celular}.\n\nMe interesa esta propiedad:\n${propiedad}${precio ? `\n💰 ${precio}\n📍 ${zona}` : ''}`;
   window.location.href = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }
 

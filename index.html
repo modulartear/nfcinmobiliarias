@@ -239,10 +239,34 @@
 </div>
 
 <!-- Botón de Admin -->
-<a href="dashboard.html" class="admin-link" title="Panel de Admin">⚙️</a>
+<a href="login.html" class="admin-link" title="Panel de Admin">⚙️</a>
 
 <script src="utils.js"></script>
-<script src="script.js"></script>
+<script>
+// Cargar datos según NFC
+async function loadNFCData() {
+  const params = new URLSearchParams(window.location.search);
+  const nfcId = params.get('nfc_id');
+
+  if (nfcId) {
+    try {
+      const response = await fetch(`/api/auth?action=get-nfc-data&nfc_id=${nfcId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        // Guardar datos globales para usar en script.js
+        window.nfcData = data;
+        window.numero = data.nfc.numero_whatsapp;
+      }
+    } catch (error) {
+      console.warn('Error cargando NFC:', error);
+    }
+  }
+}
+
+// Cargar NFC data antes de ejecutar script.js
+window.addEventListener('DOMContentLoaded', loadNFCData);
+</script>
 
 </body>
 </html>

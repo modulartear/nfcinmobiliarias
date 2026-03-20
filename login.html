@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - NFC Inmobiliarias</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .auth-header {
+      background: black;
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    .auth-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .auth-header p {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .auth-content {
+      padding: 40px 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+
+    .login-button:hover {
+      background: #5568d3;
+    }
+
+    .login-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .toggle-form {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .toggle-form p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .toggle-link {
+      color: #667eea;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .toggle-link:hover {
+      text-decoration: underline;
+    }
+
+    .form-section {
+      display: none;
+    }
+
+    .form-section.active {
+      display: block;
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border-left: 3px solid #c33;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #efe;
+      color: #3c3;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border-left: 3px solid #3c3;
+      font-size: 14px;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    #loginForm, #registerForm {
+      display: none;
+    }
+
+    #loginForm.active, #registerForm.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="auth-header">
+    <h1>🏢 Panel Admin NFC</h1>
+    <p>Gestor de Propiedades por NFC</p>
+  </div>
+
+  <div class="auth-content">
+    <!-- LOGIN -->
+    <div id="loginForm" class="form-section active">
+      <h2 style="margin-bottom: 20px; color: #333;">Iniciar Sesión</h2>
+      <div id="loginError"></div>
+      
+      <div class="form-group">
+        <label for="loginUser">Usuario o Email</label>
+        <input type="text" id="loginUser" placeholder="Tu usuario o email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">Contraseña</label>
+        <input type="password" id="loginPassword" placeholder="Tu contraseña" required>
+      </div>
+
+      <button class="login-button" onclick="handleLogin()">Iniciar Sesión</button>
+
+      <div class="toggle-form">
+        <p>¿No tienes cuenta?</p>
+        <span class="toggle-link" onclick="toggleForms()">Registrarse aquí</span>
+      </div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="registerForm" class="form-section">
+      <h2 style="margin-bottom: 20px; color: #333;">Crear Cuenta</h2>
+      <div id="registerError"></div>
+
+      <div class="form-group">
+        <label for="regUsername">Usuario</label>
+        <input type="text" id="regUsername" placeholder="Tu nombre de usuario" required>
+      </div>
+
+      <div class="form-group">
+        <label for="regEmail">Email</label>
+        <input type="email" id="regEmail" placeholder="Tu email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="regNombre">Nombre Completo</label>
+        <input type="text" id="regNombre" placeholder="Tu nombre completo" required>
+      </div>
+
+      <div class="form-group">
+        <label for="regEmpresa">Empresa</label>
+        <input type="text" id="regEmpresa" placeholder="Tu empresa (opcional)">
+      </div>
+
+      <div class="form-group">
+        <label for="regPassword">Contraseña</label>
+        <input type="password" id="regPassword" placeholder="Tu contraseña" required>
+      </div>
+
+      <div class="form-group">
+        <label for="regPassword2">Confirmar Contraseña</label>
+        <input type="password" id="regPassword2" placeholder="Confirma tu contraseña" required>
+      </div>
+
+      <button class="login-button" onclick="handleRegister()">Crear Cuenta</button>
+
+      <div class="toggle-form">
+        <p>¿Ya tienes cuenta?</p>
+        <span class="toggle-link" onclick="toggleForms()">Inicia sesión</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleForms() {
+  document.getElementById('loginForm').classList.toggle('active');
+  document.getElementById('registerForm').classList.toggle('active');
+  clearErrors();
+}
+
+function clearErrors() {
+  document.getElementById('loginError').innerHTML = '';
+  document.getElementById('registerError').innerHTML = '';
+}
+
+async function handleLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  const errorDiv = document.getElementById('loginError');
+
+  if (!username || !password) {
+    errorDiv.innerHTML = '<div class="error">Completa todos los campos</div>';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/auth?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      errorDiv.innerHTML = `<div class="error">${data.error || 'Error en autenticación'}</div>`;
+      return;
+    }
+
+    // Guardar datos localmente
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
+
+    // Redirigir a panel de control
+    window.location.href = '/admin.html';
+
+  } catch (error) {
+    errorDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+  }
+}
+
+async function handleRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const nombre = document.getElementById('regNombre').value.trim();
+  const empresa = document.getElementById('regEmpresa').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+  const errorDiv = document.getElementById('registerError');
+
+  if (!username || !email || !nombre || !password) {
+    errorDiv.innerHTML = '<div class="error">Completa los campos requeridos</div>';
+    return;
+  }
+
+  if (password !== password2) {
+    errorDiv.innerHTML = '<div class="error">Las contraseñas no coinciden</div>';
+    return;
+  }
+
+  if (password.length < 6) {
+    errorDiv.innerHTML = '<div class="error">La contraseña debe tener al menos 6 caracteres</div>';
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/auth?action=register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password, nombre, empresa })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      errorDiv.innerHTML = `<div class="error">${data.error || 'Error en registro'}</div>`;
+      return;
+    }
+
+    // Guardar datos localmente
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
+
+    // Redirigir a panel de control
+    window.location.href = '/admin.html';
+
+  } catch (error) {
+    errorDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+  }
+}
+
+// Verificar si ya está autenticado
+window.addEventListener('load', () => {
+  const user = localStorage.getItem('user');
+  if (user) {
+    window.location.href = '/admin.html';
+  }
+});
+</script>
+
+</body>
+</html>
