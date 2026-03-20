@@ -49,6 +49,16 @@ export async function ensureSchema() {
     );
   `);
 
+  // En caso de despliegues antiguos donde el esquema de usuario fue creado sin email, migramos columnas faltantes.
+  await pool.query(`ALTER TABLE dashboard_user ADD COLUMN IF NOT EXISTS email TEXT;`);
+  await pool.query(`ALTER TABLE dashboard_user ADD COLUMN IF NOT EXISTS nombre TEXT;`);
+  await pool.query(`ALTER TABLE dashboard_user ADD COLUMN IF NOT EXISTS empresa TEXT;`);
+  await pool.query(`ALTER TABLE dashboard_user ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`);
+
+  // Agregar índices de unicidad si faltan.
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS dashboard_user_username_unique ON dashboard_user(username);`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS dashboard_user_email_unique ON dashboard_user(email);`);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS nfc_device (
       id TEXT PRIMARY KEY,
