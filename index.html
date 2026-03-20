@@ -205,14 +205,6 @@
   <h1>Tu próxima propiedad empieza acá</h1>
   <p>Escaneaste mi tarjeta inteligente</p>
 
-  <div id="nfcLogin" style="display:none; margin: 15px 0; padding: 12px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;">
-    <h3>Acceso NFC</h3>
-    <div style="margin-bottom: 8px;"><label>Usuario NFC</label><br><input id="nfcLoginUsername" type="text" style="width:100%"></div>
-    <div style="margin-bottom: 8px;"><label>Contraseña NFC</label><br><input id="nfcLoginPassword" type="password" style="width:100%"></div>
-    <button id="nfcLoginBtn" style="padding: 8px 12px;">Ingresar</button>
-    <div id="nfcLoginMessage" style="margin-top: 8px; color: red;"></div>
-  </div>
-
   <!-- VCARD DEL AGENTE -->
   <div class="agent-card" id="agentCard">
     <div id="agentContent"></div>
@@ -251,91 +243,36 @@
 
 <script src="utils.js"></script>
 <script>
-// Cargar datos según NFC
+// Cargar datos según NFC - Direct load by nfc_id
 async function loadNFCData() {
   const params = new URLSearchParams(window.location.search);
   const nfcId = params.get('nfc_id');
-  const nfcToken = params.get('nfc_token');
 
   if (!nfcId) return;
 
-  const nfcLogin = document.getElementById('nfcLogin');
-  const nfcLoginMessage = document.getElementById('nfcLoginMessage');
+  try {
+    const response = await fetch(`/api/auth?action=get-nfc-data&nfc_id=${encodeURIComponent(nfcId)}`);
+    const data = await response.json();
 
-  async function loadFromAPI(token) {
-    try {
-      const response = await fetch(`/api/auth?action=get-nfc-data&nfc_id=${encodeURIComponent(nfcId)}&nfc_token=${encodeURIComponent(token)}`);
-      const data = await response.json();
-
-      if (!data.success) {
-        nfcLoginMessage.textContent = data.error || 'Error cargando NFC';
-        nfcLogin.style.display = 'block';
-        return;
-      }
-
+    if (data.success) {
       window.nfcData = data;
       window.numero = data.nfc.numero_whatsapp;
       if (typeof numero !== 'undefined') {
         numero = data.nfc.numero_whatsapp;
       }
-
-      nfcLogin.style.display = 'none';
-      if (typeof renderAgentCard === 'function') await renderAgentCard();
-      if (typeof renderProperties === 'function') await renderProperties();
-    } catch (error) {
-      nfcLoginMessage.textContent = 'Error conectando con el servidor';
-      nfcLogin.style.display = 'block';
-      console.warn('Error cargando NFC:', error);
+    } else {
+      console.warn('Error cargando NFC:', data.error);
     }
+  } catch (error) {
+    console.warn('Error conectando con NFC:', error);
   }
-
-  if (nfcToken) {
-    await loadFromAPI(nfcToken);
-    return;
-  }
-
-  // Si no hay token en la URL, mostrar login NFC
-  nfcLogin.style.display = 'block';
-  nfcLoginMessage.textContent = '';
-
-  document.getElementById('nfcLoginBtn').onclick = async () => {
-    const username = document.getElementById('nfcLoginUsername').value.trim();
-    const password = document.getElementById('nfcLoginPassword').value.trim();
-
-    if (!username || !password) {
-      nfcLoginMessage.textContent = 'Completa usuario y contraseña';
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/auth?action=login-nfc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nfc_id: nfcId, nfc_username: username, nfc_password: password })
-      });
-
-      const data = await response.json();
-      if (!data.success) {
-        nfcLoginMessage.textContent = data.error || 'Credenciales inválidas';
-        return;
-      }
-
-      await loadFromAPI(data.nfc_token);
-    } catch (error) {
-      nfcLoginMessage.textContent = 'Error de conexión';
-      console.warn('Error login NFC:', error);
-    }
-  };
 }
 
 // Cargar NFC data y renderizar después del DOMContentLoaded
 window.addEventListener('DOMContentLoaded', async () => {
   await loadNFCData();
-  if (!window.nfcData) {
-    // sin NFC, cargar datos por default
-    if (typeof renderAgentCard === 'function') await renderAgentCard();
-    if (typeof renderProperties === 'function') await renderProperties();
-  }
+  if (typeof renderAgentCard === 'function') await renderAgentCard();
+  if (typeof renderProperties === 'function') await renderProperties();
 });
 </script>
 
