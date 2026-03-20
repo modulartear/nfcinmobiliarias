@@ -172,7 +172,7 @@ async function renderLeads() {
           <strong>Interés:</strong> ${lead.interes}<br>
           <strong>Teléfono:</strong> ${lead.telefono}<br>
           <strong>Origen:</strong> ${lead.origen || 'web'}<br>
-          <strong>Fecha:</strong> ${new Date(lead.createdAt).toLocaleString()}
+          <strong>Fecha:</strong> ${lead.createdAt ? new Date(lead.createdAt).toLocaleString() : (lead.created_at ? new Date(lead.created_at).toLocaleString() : 'No disponible')}
         </div>
         <div class="property-actions">
           <span style="font-size:12px; color: ${lead.read ? '#4caf50' : '#e74c3c'};">${lead.read ? 'Leído' : 'Nuevo'}</span>
