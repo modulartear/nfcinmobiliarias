@@ -1,11 +1,19 @@
 {
-  "buildCommand": "mkdir -p public && cp index.html dashboard.html style.css config.json config.js script.js dashboard.js utils.js public/",
+  "buildCommand": "mkdir -p public && cp index.html dashboard.html admin.html login.html style.css config.json config.js script.js dashboard.js utils.js public/",
   "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
     {
       "source": "/dashboard",
       "destination": "/dashboard.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
     },
     {
       "source": "/",
