@@ -334,40 +334,53 @@ export default async function handler(req, res) {
   }
 
   // ========================================
-  // OBTENER DATOS DEL NFC: GET /api/auth?action=get-nfc-data&nfc_id=X&nfc_token=Y
+  // OBTENER DATOS DEL NFC: GET /api/auth?action=get-nfc-data&nfc_id=X
   // ========================================
   if (req.method === 'GET' && req.query.action === 'get-nfc-data') {
     try {
-      const { nfc_id, nfc_token } = req.query;
+      const { nfc_id } = req.query;
 
-      if (!nfc_id || !nfc_token) {
-        return res.status(400).json({ error: 'nfc_id y nfc_token requeridos' });
+      if (!nfc_id) {
+        return res.status(400).json({ error: 'nfc_id requerido' });
       }
 
       // Obtener info del NFC y su usuario
-      const nfcResult = await query(
-        'SELECT id, user_id, nombre, numero_whatsapp, nfc_username, nfc_token FROM nfc_device WHERE id = $1 AND nfc_token = $2 AND activo = true',
-        [nfc_id, nfc_token]
-      );
+      let nfc = null;
+      let userAgent = null;
+      let propertiesList = [];
 
-      if (nfcResult.rows.length === 0) {
-        return res.status(404).json({ error: 'NFC no encontrado o token inválido' });
+      // Intentar desde BD primero
+      if (dbEnabled) {
+        try {
+          const nfcResult = await query(
+            'SELECT id, user_id, nombre, numero_whatsapp, nfc_username FROM nfc_device WHERE id = $1 AND activo = true',
+            [nfc_id]
+          );
+
+          if (nfcResult.rows.length > 0) {
+            nfc = nfcResult.rows[0];
+
+            const agentResult = await query(
+              'SELECT id, nombre, email, telefono, empresa, presentacion, foto FROM agent WHERE user_id = $1 LIMIT 1',
+              [nfc.user_id]
+            );
+
+            const propertiesResult = await query(
+              'SELECT id, titulo, descripcion, precio, zona, tipo, imagen FROM properties WHERE user_id = $1 ORDER BY created_at DESC',
+              [nfc.user_id]
+            );
+
+            userAgent = agentResult.rows[0] || null;
+            propertiesList = propertiesResult.rows || [];
+          }
+        } catch (dbError) {
+          console.warn('DB error en get-nfc-data:', dbError.message);
+        }
       }
 
-      const nfc = nfcResult.rows[0];
-
-      const agentResult = await query(
-        'SELECT id, nombre, email, telefono, empresa, presentacion, foto FROM agent WHERE user_id = $1 LIMIT 1',
-        [nfc.user_id]
-      );
-
-      const propertiesResult = await query(
-        'SELECT id, titulo, descripcion, precio, zona, tipo, imagen FROM properties WHERE user_id = $1 ORDER BY created_at DESC',
-        [nfc.user_id]
-      );
-
-      const agent = agentResult.rows[0] || null;
-      const properties = propertiesResult.rows || [];
+      if (!nfc) {
+        return res.status(404).json({ error: 'NFC no encontrado o inactivo' });
+      }
 
       return res.status(200).json({
         success: true,
@@ -377,8 +390,8 @@ export default async function handler(req, res) {
           numero_whatsapp: nfc.numero_whatsapp,
           nfc_username: nfc.nfc_username
         },
-        agent,
-        properties
+        agent: userAgent,
+        properties: propertiesList
       });
     } catch (error) {
       console.error('Error obteniendo datos del NFC:', error);

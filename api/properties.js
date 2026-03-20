@@ -23,7 +23,17 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const result = await query('SELECT * FROM properties ORDER BY created_at DESC');
+      const userId = req.query.user_id;
+      let query_text = 'SELECT * FROM properties';
+      let params = [];
+      
+      if (userId) {
+        query_text += ' WHERE user_id = $1';
+        params = [userId];
+      }
+      
+      query_text += ' ORDER BY created_at DESC';
+      const result = await query(query_text, params);
       return res.status(200).json({ properties: result.rows });
     } catch (error) {
       console.error('Error leyendo propiedades:', error);
@@ -33,18 +43,22 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { titulo, descripcion, precio, zona, tipo, caracteristicas, imagen } = req.body;
+      const { titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, user_id } = req.body;
       if (!titulo || !descripcion) {
         return res.status(400).json({ error: 'Faltan campos necesarios' });
+      }
+
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id es requerido' });
       }
 
       const id = crypto.randomUUID();
       const createdAt = new Date().toISOString();
 
       await query(
-        `INSERT INTO properties (id, titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-        [id, titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, createdAt]
+        `INSERT INTO properties (id, user_id, titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [id, user_id, titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, createdAt]
       );
 
       return res.status(200).json({ success: true, property: { id, titulo, descripcion, precio, zona, tipo, caracteristicas, imagen, created_at: createdAt } });

@@ -566,7 +566,7 @@ async function saveAgent() {
 
 async function loadAgent() {
   try {
-    const response = await fetch('/api/agent');
+    const response = await fetch(`/api/agent?user_id=${currentUser.id}`);
     if (!response.ok) return;
 
     const data = await response.json();
@@ -641,7 +641,7 @@ async function createProperty() {
 
 async function loadProperties() {
   try {
-    const response = await fetch('/api/properties');
+    const response = await fetch(`/api/properties?user_id=${currentUser.id}`);
     if (!response.ok) return;
 
     const data = await response.json();
