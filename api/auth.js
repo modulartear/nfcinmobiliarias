@@ -29,10 +29,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Base de datos no disponible' });
   }
 
+  const action = req.query.action || req.body.action;
+
   // ========================================
   // REGISTRO: POST /api/auth?action=register
   // ========================================
-  if (req.method === 'POST' && req.query.action === 'register') {
+  if (req.method === 'POST' && action === 'register') {
     try {
       const { username, email, password, nombre, empresa } = req.body;
 
@@ -79,7 +81,7 @@ export default async function handler(req, res) {
   // ========================================
   // LOGIN: POST /api/auth?action=login
   // ========================================
-  if (req.method === 'POST' && req.query.action === 'login') {
+  if (req.method === 'POST' && action === 'login') {
     try {
       const { username, password } = req.body;
 
@@ -127,7 +129,7 @@ export default async function handler(req, res) {
   // ========================================
   // CREAR NFC: POST /api/auth?action=create-nfc
   // ========================================
-  if (req.method === 'POST' && req.query.action === 'create-nfc') {
+  if (req.method === 'POST' && action === 'create-nfc') {
     try {
       const { user_id, nombre, numero_whatsapp, nfc_id } = req.body;
 
