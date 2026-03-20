@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       } else {
         await query(
           `UPDATE agent SET nombre=$1, email=$2, telefono=$3, empresa=$4, presentacion=$5, foto=$6, updated_at = NOW() 
-           WHERE user_id = $8`,
+           WHERE user_id = $7`,
           [nombre, email, telefono, empresa, presentacion, foto, user_id]
         );
       }
