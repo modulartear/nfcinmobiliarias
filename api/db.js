@@ -66,11 +66,20 @@ export async function ensureSchema() {
       nombre TEXT,
       descripcion TEXT,
       numero_whatsapp TEXT,
+      nfc_username TEXT UNIQUE,
+      nfc_password_hash TEXT,
+      nfc_token TEXT UNIQUE,
       activo BOOLEAN DEFAULT true,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
+
+  await pool.query(`ALTER TABLE nfc_device ADD COLUMN IF NOT EXISTS nfc_username TEXT;`);
+  await pool.query(`ALTER TABLE nfc_device ADD COLUMN IF NOT EXISTS nfc_password_hash TEXT;`);
+  await pool.query(`ALTER TABLE nfc_device ADD COLUMN IF NOT EXISTS nfc_token TEXT;`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS nfc_device_nfc_username_unique ON nfc_device(nfc_username);`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS nfc_device_nfc_token_unique ON nfc_device(nfc_token);`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS agent (

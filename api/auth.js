@@ -232,27 +232,29 @@ export default async function handler(req, res) {
   // ========================================
   if (req.method === 'POST' && action === 'create-nfc') {
     try {
-      const { user_id, nombre, numero_whatsapp, nfc_id } = body;
+      const { user_id, nombre, numero_whatsapp, nfc_id, nfc_username, nfc_password } = body;
 
       if (!user_id || !nombre || !numero_whatsapp) {
         return res.status(400).json({ error: 'Datos incompletos' });
       }
 
-      // Generar ID único para NFC si no existe
       const nfcId = nfc_id || `nfc_${crypto.randomUUID()}`;
 
-      // Verificar que el NFC no exista
-      const existing = await query('SELECT id FROM nfc_device WHERE id = $1', [nfcId]);
-      if (existing.rows.length > 0) {
+      const exists = await query('SELECT id FROM nfc_device WHERE id = $1', [nfcId]);
+      if (exists.rows.length > 0) {
         return res.status(409).json({ error: 'Este NFC ya existe' });
       }
 
-      // Crear NFC
+      const nfcUsername = nfc_username || `nfc_user_${nfcId.substr(0, 8)}`;
+      const passwordPlain = nfc_password || crypto.randomBytes(5).toString('hex');
+      const passwordHash = hashPassword(passwordPlain);
+      const nfcToken = crypto.randomBytes(24).toString('hex');
+
       const result = await query(
-        `INSERT INTO nfc_device (id, user_id, nombre, numero_whatsapp, activo) 
-         VALUES ($1, $2, $3, $4, true) 
-         RETURNING id, user_id, nombre, numero_whatsapp, activo, created_at`,
-        [nfcId, user_id, nombre, numero_whatsapp]
+        `INSERT INTO nfc_device (id, user_id, nombre, numero_whatsapp, nfc_username, nfc_password_hash, nfc_token, activo) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true) 
+         RETURNING id, user_id, nombre, numero_whatsapp, nfc_username, nfc_token, activo, created_at`,
+        [nfcId, user_id, nombre, numero_whatsapp, nfcUsername, passwordHash, nfcToken]
       );
 
       const nfc = result.rows[0];
@@ -264,6 +266,9 @@ export default async function handler(req, res) {
           id: nfc.id,
           nombre: nfc.nombre,
           numero_whatsapp: nfc.numero_whatsapp,
+          nfc_username: nfc.nfc_username,
+          nfc_password: passwordPlain,
+          nfc_token: nfc.nfc_token,
           estado: nfc.activo ? 'activo' : 'inactivo'
         }
       });
@@ -284,7 +289,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'user_id requerido' });
       }
 
-      const result = await query('SELECT id, nombre, numero_whatsapp, activo, created_at FROM nfc_device WHERE user_id = $1 ORDER BY created_at DESC', [user_id]);
+      const result = await query('SELECT id, nombre, numero_whatsapp, nfc_username, nfc_token, activo, created_at FROM nfc_device WHERE user_id = $1 ORDER BY created_at DESC', [user_id]);
 
       return res.status(200).json({
         success: true,
@@ -297,19 +302,18 @@ export default async function handler(req, res) {
   }
 
   // ========================================
-  // OBTENER DATOS DEL NFC: GET /api/auth?action=get-nfc-data&nfc_id=X
+  // LOGIN NFC: POST /api/auth?action=login-nfc
+  // body: { nfc_id, nfc_username, nfc_password }
   // ========================================
-  if (req.method === 'GET' && req.query.action === 'get-nfc-data') {
+  if (req.method === 'POST' && action === 'login-nfc') {
     try {
-      const { nfc_id } = req.query;
-
-      if (!nfc_id) {
-        return res.status(400).json({ error: 'nfc_id requerido' });
+      const { nfc_id, nfc_username, nfc_password } = body;
+      if (!nfc_id || !nfc_username || !nfc_password) {
+        return res.status(400).json({ error: 'nfc_id, nfc_username y nfc_password requeridos' });
       }
 
-      // Obtener info del NFC y su usuario
       const nfcResult = await query(
-        'SELECT id, user_id, nombre, numero_whatsapp FROM nfc_device WHERE id = $1',
+        'SELECT id, nfc_username, nfc_password_hash, nfc_token, activo FROM nfc_device WHERE id = $1 AND activo = true',
         [nfc_id]
       );
 
@@ -318,14 +322,45 @@ export default async function handler(req, res) {
       }
 
       const nfc = nfcResult.rows[0];
+      if (nfc.nfc_username !== nfc_username || hashPassword(nfc_password) !== nfc.nfc_password_hash) {
+        return res.status(401).json({ error: 'Credenciales NFC incorrectas' });
+      }
 
-      // Obtener datos del agente de ese usuario
+      return res.status(200).json({ success: true, nfc_token: nfc.nfc_token });
+    } catch (error) {
+      console.error('Error login NFC:', error);
+      return res.status(500).json({ error: 'Error login NFC' });
+    }
+  }
+
+  // ========================================
+  // OBTENER DATOS DEL NFC: GET /api/auth?action=get-nfc-data&nfc_id=X&nfc_token=Y
+  // ========================================
+  if (req.method === 'GET' && req.query.action === 'get-nfc-data') {
+    try {
+      const { nfc_id, nfc_token } = req.query;
+
+      if (!nfc_id || !nfc_token) {
+        return res.status(400).json({ error: 'nfc_id y nfc_token requeridos' });
+      }
+
+      // Obtener info del NFC y su usuario
+      const nfcResult = await query(
+        'SELECT id, user_id, nombre, numero_whatsapp, nfc_username, nfc_token FROM nfc_device WHERE id = $1 AND nfc_token = $2 AND activo = true',
+        [nfc_id, nfc_token]
+      );
+
+      if (nfcResult.rows.length === 0) {
+        return res.status(404).json({ error: 'NFC no encontrado o token inválido' });
+      }
+
+      const nfc = nfcResult.rows[0];
+
       const agentResult = await query(
         'SELECT id, nombre, email, telefono, empresa, presentacion, foto FROM agent WHERE user_id = $1 LIMIT 1',
         [nfc.user_id]
       );
 
-      // Obtener propiedades del usuario
       const propertiesResult = await query(
         'SELECT id, titulo, descripcion, precio, zona, tipo, imagen FROM properties WHERE user_id = $1 ORDER BY created_at DESC',
         [nfc.user_id]
@@ -339,10 +374,11 @@ export default async function handler(req, res) {
         nfc: {
           id: nfc.id,
           nombre: nfc.nombre,
-          numero_whatsapp: nfc.numero_whatsapp
+          numero_whatsapp: nfc.numero_whatsapp,
+          nfc_username: nfc.nfc_username
         },
-        agent: agent,
-        properties: properties
+        agent,
+        properties
       });
     } catch (error) {
       console.error('Error obteniendo datos del NFC:', error);

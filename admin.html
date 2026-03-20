@@ -275,6 +275,14 @@
           <label>Número WhatsApp</label>
           <input type="tel" id="nfcWhatsapp" placeholder="Ej: +5491234567890">
         </div>
+        <div class="form-group">
+          <label>Usuario NFC</label>
+          <input type="text" id="nfcUsername" placeholder="Opcional, se genera automáticamente">
+        </div>
+        <div class="form-group">
+          <label>Contraseña NFC</label>
+          <input type="text" id="nfcPassword" placeholder="Opcional, se genera automáticamente">
+        </div>
         <button class="btn btn-primary" onclick="createNFC()">Crear NFC</button>
         <div id="nfcMessage"></div>
       </div>
@@ -416,10 +424,12 @@ function logout() {
 async function createNFC() {
   const nombre = document.getElementById('nfcNombre').value.trim();
   const numero_whatsapp = document.getElementById('nfcWhatsapp').value.trim();
+  const nfc_username = document.getElementById('nfcUsername').value.trim();
+  const nfc_password = document.getElementById('nfcPassword').value.trim();
   const msgDiv = document.getElementById('nfcMessage');
 
   if (!nombre || !numero_whatsapp) {
-    msgDiv.innerHTML = '<div class="message error">Completa todos los campos</div>';
+    msgDiv.innerHTML = '<div class="message error">Completa los campos necesarios</div>';
     return;
   }
 
@@ -430,7 +440,9 @@ async function createNFC() {
       body: JSON.stringify({
         user_id: currentUser.id,
         nombre,
-        numero_whatsapp
+        numero_whatsapp,
+        nfc_username,
+        nfc_password
       })
     });
 
@@ -441,9 +453,14 @@ async function createNFC() {
       return;
     }
 
-    msgDiv.innerHTML = '<div class="message success">NFC creado correctamente ✓</div>';
+    msgDiv.innerHTML = `<div class="message success">NFC creado correctamente ✓<br>
+      URL: <code>https://tu-dominio.com/?nfc_id=${data.nfc.id}&nfc_token=${data.nfc.nfc_token}</code><br>
+      Usuario: ${data.nfc.nfc_username}<br>
+      Contraseña: ${data.nfc_password}</div>`;
     document.getElementById('nfcNombre').value = '';
     document.getElementById('nfcWhatsapp').value = '';
+    document.getElementById('nfcUsername').value = '';
+    document.getElementById('nfcPassword').value = '';
     
     setTimeout(() => loadNFCs(), 1000);
   } catch (error) {
@@ -466,15 +483,18 @@ async function loadNFCs() {
     list.innerHTML = data.nfcs.map(nfc => `
       <div class="nfc-card">
         <h3>${nfc.nombre}</h3>
-        <div class="nfc-badge">✓ Activo</div>
+        <div class="nfc-badge">${nfc.activo ? '✓ Activo' : '🚫 Inactivo'}</div>
         <div class="nfc-info">
           <strong>WhatsApp:</strong> ${nfc.numero_whatsapp}
+        </div>
+        <div class="nfc-info">
+          <strong>Usuario NFC:</strong> ${nfc.nfc_username || '-'}
         </div>
         <div class="nfc-info">
           <strong>ID NFC:</strong> ${nfc.id}
         </div>
         <div class="qr-link">
-          URL: https://nfc.tudominio.com/?nfc_id=${nfc.id}
+          URL: https://nfc.tudominio.com/?nfc_id=${nfc.id}&nfc_token=${nfc.nfc_token}
         </div>
         <div class="nfc-actions" style="margin-top: 10px;">
           <button class="copy-btn" onclick="copyToClipboard('https://nfc.tudominio.com/?nfc_id=${nfc.id}')">
